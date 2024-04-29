@@ -8,11 +8,11 @@
 #    - fMRI is selected and there's no fieldmap with it
 # 3. Apply pid, sid, and datatype filters to filter the qc_input file
 # 4. Produce both the filtered qc_input and the s3_output files suffixed with
-#    filtered_{datatypes}_p-{participant_count}_s-{session_count}_{YYYYMMDD-hhmmss}, examples like:
-#    - filtered_all_p-11807_s-19104_20240408-131246
-#    - filtered_all-anat_p-11807_s-19104_20240408-131622
-#    - filtered_all-task-rest_p-9732_s-16324_20240408-132537
-#    - filtered_all-task-rest+only-t1w-normalized_p-7216_s-12024_20240408-131808
+#    filtered_{datatypes}_p-{participant_count}_s-{session_count}, examples like:
+#    - filtered_all_p-11807_s-19104
+#    - filtered_all-anat_p-11807_s-19104
+#    - filtered_all-task-rest_p-9732_s-16324
+#    - filtered_all-task-rest+only-t1w-normalized_p-7216_s-12024
 #
 
 
@@ -568,7 +568,7 @@ def main():
     #    {qc_input}_{suffix}.txt, see format at the top of this file
     unique_sub = list(set([series.split('_')[0] for series in input['ftq_series_id']]))
     unique_subses = list(set([(series.split('_')[0], series.split('_')[1]) for series in input['ftq_series_id']]))
-    suffix = f"filtered_{datatypes_str}_p-{len(unique_sub)}_s-{len(unique_subses)}_{pandas.Timestamp.now().strftime('%Y%m%d-%H%M%S')}"
+    suffix = f"filtered_{datatypes_str}_p-{len(unique_sub)}_s-{len(unique_subses)}"
 
     debug(suffix)
 

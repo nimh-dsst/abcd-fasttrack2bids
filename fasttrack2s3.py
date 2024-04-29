@@ -18,8 +18,10 @@
 
 # imports
 import argparse
+import csv
 import logging
 import os
+import pandas
 import re
 
 from logging import info, warning, error, critical, debug
@@ -353,8 +355,9 @@ def cli():
                         help="The NDA-formatted abcd_fastqc01.txt as-provided "
                             "from the NDA.")
 
-    parser.add_argument(dest='s3_output', metavar='OUTPUT_FILE', type=available,
-                        help="The output S3 links file to give to downloadcmd.")
+    parser.add_argument(dest='output_dir', metavar='OUTPUT_DIR', type=available,
+                        help="The output folder for the S3 links file and "
+                            "subset abcd_fastqc01.txt file.")
 
 
     # make argument groups
@@ -363,7 +366,9 @@ def cli():
         description="You can filter by exact participants and sessions with "
                     "the below options. All participant IDs can be in "
                     "either NDA GUID or BIDS ID or just the last eight ID "
-                    "characters format. Letter case is ignored during filtering.")
+                    "characters format. Letter case is ignored during "
+                    "filtering. In the absence of any participant or session "
+                    "options, all participants and sessions are included.")
 
     participants = part_sess.add_mutually_exclusive_group()
     sessions = part_sess.add_mutually_exclusive_group()
@@ -389,6 +394,7 @@ def cli():
     part_sess.add_argument('-csv', '--csv', '--participant-session-csv',
                             default=None, metavar='FILE',type=readable,
                             help="The path to a comma-separated value file with "
+                                "no header or index column. The file MUST have "
                                 "exactly 1 participant ID, a comma, and then 1 "
                                 "session ID per line. This is the preferred "
                                 "method of passing in exact pairings of "
@@ -444,17 +450,143 @@ def main():
 
     debug(args)
 
+    # read in the participant and session csv file
+    subses_list = []
+    subjects = []
+    sessions = []
+
+    if args.csv != None:
+        # read in the pid/sid csv file
+        with open(args.csv, 'r') as f:
+            for line in f.readlines():
+                split = line.rstrip('\n').strip().split(',')
+
+                if len(split) != 2:
+                    raise ValueError(f"Invalid CSV format in {args.csv}")
+                else:
+                    subses_list.append(split)
+
+    else:
+        # read in the pid txt file
+        if args.participant_txt != None:
+            with open(args.participant_txt, 'r') as f:
+                for line in f.readlines():
+                    subjects.append(line.rstrip('\n').strip())
+
+        elif args.participant_id != None:
+            for pid in args.participant_id:
+                subjects.append(pid)
+
+        else:
+            warning("No participant IDs provided. All participants will be included.")
+
+        # read in the sid txt file
+        if args.session_txt != None:
+            with open(args.session_txt, 'r') as f:
+                for line in f.readlines():
+                    sessions.append(line.rstrip('\n').strip())
+
+        else:
+            sessions = args.session_id
+
+    debug(subses_list)
+    debug(subjects)
+    debug(sessions)
+
+    # sanitize the subject and session search strings
+    subses = []
+
+    if len(subses_list) > 0:
+        for sub, ses in subses_list:
+            if len(sub) < 8:
+                raise ValueError(f"Invalid participant ID: {sub}")
+
+            subses.append(sub.upper()[-8:] + '_' + ses.lstrip('ses-'))
+
+    if len(subjects) > 0:
+        for sub in subjects:
+            if len(sub) < 8:
+                raise ValueError(f"Invalid participant ID: {sub}")
+
+        subjects = [sub.upper()[-8:] for sub in subjects]
+
+    if len(sessions) > 0:
+        for ses in sessions:
+            if ses not in SESSIONS:
+                raise ValueError(f"Invalid session ID: {ses}")
+
+        sessions = [ses.lstrip('ses-') for ses in sessions]
+
+    if len(subses) == 0 and len(subjects) == 0 and len(sessions) == 0:
+        warning("No participant or session filters provided. All participants and sessions will be included.")
+        
+
+    # collect all datatypes
+    datatypes_str = "+".join(sorted(args.datatypes))
+    dt_set = set()
+    for datatype in args.datatypes:
+        for t in set(DATATYPES[datatype]['types']):
+            dt_set.add(t)
+
+    dt_list = sorted(list(dt_set))
+
+    debug(datatypes_str)
+    debug(dt_list)
+
     # 2. Warn users about the filtered qc_input file for invalid data. Things like:
     #    - fMRI is selected and there's no fieldmap with it
 
     # 3. Apply pid, sid, and datatype filters to filter the qc_input file
-    # 3.1. Read in the qc_input file
-    # 3.2. Filter by datatype
-    # 3.3. Filter by pid
-    # 3.4. Filter by sid
+
+    # Read in the qc_input file
+    input = pandas.read_csv(args.qc_input, sep='\t', dtype=str)
+
+    # Get the first row for later before it's gone
+    row0 = input.iloc[0]
+
+    # Filter by subses
+    if len(subses) != 0:
+        mask = input['ftq_series_id'].str.contains('|'.join(subses), flags=re.IGNORECASE)
+        input = input[mask]
+
+    # Filter by subjects
+    if len(subjects) != 0:
+        mask = input['ftq_series_id'].str.contains('|'.join(subjects), flags=re.IGNORECASE)
+        input = input[mask]
+
+    # Filter by sessions
+    if len(sessions) != 0:
+        mask = input['ftq_series_id'].str.contains('|'.join(sessions), flags=re.IGNORECASE)
+        input = input[mask]
+
+    # Filter by datatype
+    input = input[input['ftq_series_id'].str.contains('|'.join(dt_list))]
+
+    debug(input["ftq_series_id"])
 
     # 4. Produce both the filtered qc_input file and the s3_output file named as
-    #    {qc_input}_filtered_{suffix}.txt, see format at the top of this file
+    #    {qc_input}_{suffix}.txt, see format at the top of this file
+    unique_sub = list(set([series.split('_')[0] for series in input['ftq_series_id']]))
+    unique_subses = list(set([(series.split('_')[0], series.split('_')[1]) for series in input['ftq_series_id']]))
+    suffix = f"filtered_{datatypes_str}_p-{len(unique_sub)}_s-{len(unique_subses)}_{pandas.Timestamp.now().strftime('%Y%m%d-%H%M%S')}"
+
+    debug(suffix)
+
+    # write out the S3 links file
+    output_s3 = args.output_dir / f"s3_links_{suffix}.txt"
+
+    with open(output_s3, 'w') as f:
+        for series in input['file_source']:
+            f.write(f"{series}\n")
+
+    # write out the filtered qc_input file
+    output_qc = args.output_dir / f"{args.qc_input.stem}_{suffix}.txt"
+
+    # append back in the row 0 for completeness
+    input.loc[-1] = row0
+    input.index = input.index + 1  # shift index
+    input = input.sort_index()  # sort by index
+    input.to_csv(output_qc, sep='\t', quoting=csv.QUOTE_ALL, index=False)
 
 
 if __name__ == '__main__':

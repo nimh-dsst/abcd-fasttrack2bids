@@ -4,9 +4,12 @@
 # pseudocode
 #
 # 1. Parse command line arguments
+# @TODO: Add messages of warning/caution for the user to know what's going on
 # 2. Warn users about the filtered qc_input file for invalid data. Things like:
 #    - fMRI is selected and there's no fieldmap with it
+# @TODO: Add more search filter options using BIDS participants.tsv
 # 3. Apply pid, sid, and datatype filters to filter the qc_input file
+# @TODO: Add option to only output S3 links and skip producing the filtered qc_input file
 # 4. Produce both the filtered qc_input and the s3_output files suffixed with
 #    filtered_{datatypes}_p-{participant_count}_s-{session_count}, examples like:
 #    - filtered_all_p-11807_s-19104
@@ -568,19 +571,19 @@ def main():
     #    {qc_input}_{suffix}.txt, see format at the top of this file
     unique_sub = list(set([series.split('_')[0] for series in input['ftq_series_id']]))
     unique_subses = list(set([(series.split('_')[0], series.split('_')[1]) for series in input['ftq_series_id']]))
-    suffix = f"filtered_{datatypes_str}_p-{len(unique_sub)}_s-{len(unique_subses)}"
+    suffix = f"{datatypes_str}_p-{len(unique_sub)}_s-{len(unique_subses)}"
 
     debug(suffix)
 
     # write out the S3 links file
-    output_s3 = args.output_dir / f"s3_links_{suffix}.txt"
+    output_s3 = args.output_dir / f"{args.qc_input.stem}_{suffix}_s3links.txt"
 
     with open(output_s3, 'w') as f:
         for series in input['file_source']:
             f.write(f"{series}\n")
 
     # write out the filtered qc_input file
-    output_qc = args.output_dir / f"{args.qc_input.stem}_{suffix}.txt"
+    output_qc = args.output_dir / f"{args.qc_input.stem}_{suffix}_filtered.txt"
 
     # append back in the row 0 for completeness
     input.loc[-1] = row0

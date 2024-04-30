@@ -3,8 +3,9 @@
 
 # pseudocode
 #
+# @TODO: Add additonal option to save out logs to a specific file
 # 1. Parse command line arguments
-# @TODO: Add messages of warning/caution for the user to know what's going on
+# @TODO: Add levels of log messages of warning/caution for the user to know what's going on with datatypes specifically
 # 2. Warn users about the filtered qc_input file for invalid data. Things like:
 #    - fMRI is selected and there's no fieldmap with it
 # @TODO: Add more search filter options using BIDS participants.tsv
@@ -27,7 +28,7 @@ import os
 import pandas
 import re
 
-from logging import info, warning, error, critical, debug
+from logging import debug, info, warning, error, critical
 from pathlib import Path
 
 
@@ -49,7 +50,7 @@ SESSIONS = [
 DATATYPES = {
     "all": {
         "warning": 
-            "The \"all\" datatype contians everything except QA data.",
+            "The \"all\" datatype contains everything except QA data.",
         "types": [
             "_ABCD-DTI_",
             "_ABCD-Diffusion-FM_",

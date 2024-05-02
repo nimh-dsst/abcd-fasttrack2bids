@@ -3,7 +3,7 @@
 ## To do
 
 - [ ] Give credit to DCAN-Labs/abcd-dicom2bids for inspiration of the dcm2bids config JSON.
-- [x] Create a fast track to s3 link filter script.
+- [x] ~~Create a fast track to s3 link filter script.~~
 - [ ] Execute plan for `downloadcmd`, `tar xzf`, and `dcm2bids`.
 
 ## Plan

@@ -4,11 +4,13 @@
 # pseudocode
 #
 # @TODO: Add additonal option to save out logs to a specific file
+# @TODO: Add option to filter by either inclusion or exclusion of the ftq_* columns
+#    e.g. "{"ftq_complete": "0"}""
 # 1. Parse command line arguments
 # @TODO: Add levels of log messages of warning/caution for the user to know what's going on with datatypes specifically
 # 2. Warn users about the filtered qc_input file for invalid data. Things like:
 #    - fMRI is selected and there's no fieldmap with it
-# @TODO: Add more search filter options using BIDS participants.tsv
+# (NEVERMIND) @TODO: Add more search filter options using BIDS participants.tsv
 # 3. Apply pid, sid, and datatype filters to filter the qc_input file
 # @TODO: Add option to only output S3 links and skip producing the filtered qc_input file
 # 4. Produce both the filtered qc_input and the s3_output files suffixed with

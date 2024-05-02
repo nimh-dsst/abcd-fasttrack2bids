@@ -1,0 +1,16 @@
+{
+    "Name": "NIMH Data Science & Sharing Team ABCD fast track BIDS",
+    "BIDSVersion": "1.9.0",
+    "Authors": [
+        "Eric Earl",
+        "Dustin Moraczewski"
+    ],
+    "Acknowledgements": "Thanks to the ABCD Study consortium for making this data available on the NDA. Thanks to the NIMH Data Science & Sharing Team for their support in creating this code. Thanks to the DCAN Labs abcd-dicom2bids repository for the start of a Dcm2Bids v2 configuration file.",
+    "HowToAcknowledge": "Cite the Zenodo DOI.",
+    "ReferencesAndLinks": [
+        "https://abcdstudy.org/",
+        "https://nda.nih.gov/edit_collection.html?id=2573",
+        "https://cmn.nimh.nih.gov/dsst",
+        "https://github.com/DCAN-Labs/abcd-dicom2bids"
+    ]
+}

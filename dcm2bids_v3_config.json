@@ -1,0 +1,362 @@
+{
+    "compKeys": ["AcquisitionTime", "SeriesNumber", "SidecarFilename"],
+    "descriptions": [
+        {
+            "datatype": "dwi",
+            "suffix": "dwi",
+            "criteria": {
+                "SeriesDescription": "ABCD-DTI*"
+            }
+        },
+        {
+            "datatype": "fmap",
+            "suffix": "epi",
+            "custom_entities": "acq-dwi_dir-AP",
+            "criteria": {
+                "SeriesDescription": "ABCD-Diffusion-FM-AP*"
+            }
+        },
+        {
+            "datatype": "fmap",
+            "suffix": "epi",
+            "custom_entities": "acq-dwi_dir-AP",
+            "criteria": {
+                "SeriesDescription": "ABCD-Diffusion-FM_GE_original_*"
+            }
+        },
+        {
+            "datatype": "fmap",
+            "suffix": "epi",
+            "custom_entities": "acq-dwi_dir-AP",
+            "criteria": {
+                "SeriesDescription": "ABCD-Diffusion-FM,*"
+            }
+        },
+        {
+            "datatype": "fmap",
+            "suffix": "epi",
+            "custom_entities": "acq-dwi_dir-PA",
+            "criteria": {
+                "SeriesDescription": "ABCD-Diffusion-FM-PA*"
+            }
+        },
+        {
+            "datatype": "fmap",
+            "suffix": "epi",
+            "custom_entities": "acq-func_dir-AP",
+            "criteria": {
+                "SeriesDescription": "ABCD-fMRI-FM-AP,*"
+            }
+        },
+        {
+            "datatype": "fmap",
+            "suffix": "epi",
+            "custom_entities": "acq-func_dir-AP",
+            "criteria": {
+                "SeriesDescription": "ABCD-fMRI-FM-AP_SIEMENS_original_*"
+            }
+        },
+        {
+            "datatype": "fmap",
+            "suffix": "epi",
+            "custom_entities": "acq-func_dir-PA",
+            "criteria": {
+                "SeriesDescription": "ABCD-fMRI-FM-PA,*"
+            }
+        },
+        {
+            "datatype": "fmap",
+            "suffix": "epi",
+            "custom_entities": "acq-func_dir-PA",
+            "criteria": {
+                "SeriesDescription": "ABCD-fMRI-FM-PA_SIEMENS_original_*"
+            }
+        },
+        {
+            "datatype": "anat",
+            "suffix": "T1w",
+            "custom_entities": "rec-normalized",
+            "criteria": {
+                "SeriesDescription": "ABCD-T1-NORM_SIEMENS_original_*"
+            }
+        },
+        {
+            "datatype": "anat",
+            "suffix": "T1w",
+            "custom_entities": "rec-normalized",
+            "criteria": {
+                "SeriesDescription": "ABCD-T1-NORM,*"
+            }
+        },
+        {
+            "datatype": "anat",
+            "suffix": "T1w",
+            "criteria": {
+                "SeriesDescription": "ABCD-T1,*"
+            }
+        },
+        {
+            "datatype": "anat",
+            "suffix": "T1w",
+            "criteria": {
+                "SeriesDescription": "ABCD-T1_SIEMENS_original_*"
+            }
+        },
+        {
+            "datatype": "anat",
+            "suffix": "T2w",
+            "criteria": {
+                "SeriesDescription": "ABCD-T2_SIEMENS_original_*"
+            }
+        },
+        {
+            "datatype": "anat",
+            "suffix": "T2w",
+            "custom_entities": "rec-normalized",
+            "criteria": {
+                "SeriesDescription": "ABCD-T2-NORM_SIEMENS_original_*"
+            }
+        },
+        {
+            "datatype": "anat",
+            "suffix": "T2w",
+            "custom_entities": "rec-normalized",
+            "criteria": {
+                "SeriesDescription": "ABCD-T2-NORM,*"
+            }
+        },
+        {
+            "datatype": "anat",
+            "suffix": "T2w",
+            "criteria": {
+                "SeriesDescription": "ABCD-T2,*"
+            }
+        },
+        {
+            "datatype": "func",
+            "suffix": "bold",
+            "custom_entities": "task-MID",
+            "criteria": {
+                "SeriesDescription": "ABCD-MID-fMRI*"
+            }
+        },
+        {
+            "datatype": "func",
+            "suffix": "bold",
+            "custom_entities": "task-MID",
+            "criteria": {
+                "SeriesDescription": "ABCD-MID-fMRI_SIEMENS_mosaic_original_*"
+            }
+        },
+        {
+            "datatype": "func",
+            "suffix": "bold",
+            "custom_entities": "task-rest",
+            "criteria": {
+                "SeriesDescription": "ABCD-rsfMRI*"
+            }
+        },
+        {
+            "datatype": "func",
+            "suffix": "bold",
+            "custom_entities": "task-rest",
+            "criteria": {
+                "SeriesDescription": "ABCD-rsfMRI_SIEMENS_mosaic_original_*"
+            }
+        },
+        {
+            "datatype": "func",
+            "suffix": "bold",
+            "custom_entities": "task-SST",
+            "criteria": {
+                "SeriesDescription": "ABCD-SST-fMRI*"
+            }
+        },
+        {
+            "datatype": "func",
+            "suffix": "bold",
+            "custom_entities": "task-SST",
+            "criteria": {
+                "SeriesDescription": "ABCD-SST-fMRI_SIEMENS_mosaic_original_*"
+            }
+        },
+        {
+            "datatype": "func",
+            "suffix": "bold",
+            "custom_entities": "task-nback",
+            "criteria": {
+                "SeriesDescription": "ABCD-nBack-fMRI*"
+            }
+        },
+        {
+            "datatype": "func",
+            "suffix": "bold",
+            "custom_entities": "task-nback",
+            "criteria": {
+                "SeriesDescription": "ABCD-nBack-fMRI_SIEMENS_mosaic_original_*"
+            }
+        },
+        {
+            "datatype": "fmap",
+            "suffix": "epi",
+            "custom_entities": "acq-func_dir-PA",
+            "criteria": {
+                "SeriesDescription": "ABCD-fMRI-FM-PA_PHILIPS_original_*"
+            }
+        },
+        {
+            "datatype": "fmap",
+            "suffix": "epi",
+            "custom_entities": "acq-func_dir-AP",
+            "criteria": {
+                "SeriesDescription": "ABCD-fMRI-FM-AP_PHILIPS_original_*"
+            }
+        },
+        {
+            "datatype": "anat",
+            "suffix": "T2w",
+            "criteria": {
+                "SeriesDescription": "ABCD-T2_PHILIPS_original_*"
+            }
+        },
+        {
+            "datatype": "anat",
+            "suffix": "T1w",
+            "criteria": {
+                "SeriesDescription": "ABCD-T1_PHILIPS_original_*"
+            }
+        },
+        {
+            "datatype": "func",
+            "suffix": "bold",
+            "custom_entities": "task-rest",
+            "criteria": {
+                "SeriesDescription": "ABCD-rsfMRI_PHILIPS_original_*"
+            }
+        },
+        {
+            "datatype": "func",
+            "suffix": "bold",
+            "custom_entities": "task-nback",
+            "criteria": {
+                "SeriesDescription": "ABCD-nBack-fMRI_PHILIPS_original_*"
+            }
+        },
+        {
+            "datatype": "func",
+            "suffix": "bold",
+            "custom_entities": "task-SST",
+            "criteria": {
+                "SeriesDescription": "ABCD-SST-fMRI_PHILIPS_original_*"
+            }
+        },
+        {
+            "datatype": "func",
+            "suffix": "bold",
+            "custom_entities": "task-MID",
+            "criteria": {
+                "SeriesDescription": "ABCD-MID-fMRI_PHILIPS_original_*"
+            }
+        },
+        {
+            "datatype": "fmap",
+            "suffix": "epi",
+            "custom_entities": "acq-func_dir-both",
+            "criteria": {
+                "SeriesDescription": "ABCD-fMRI-FM_GE_original_*",
+                "PhaseEncodingAxis": "j"
+            }
+        },
+        {
+            "datatype": "fmap",
+            "suffix": "epi",
+            "custom_entities": "acq-func_dir-both",
+            "criteria": {
+                "SeriesDescription": "ABCD-fMRI-FM,*",
+                "PhaseEncodingAxis": "j"
+            }
+        },
+        {
+            "datatype": "anat",
+            "suffix": "T1w",
+            "criteria": {
+                "SeriesDescription": "ABCD-T1_GE_original_*"
+            }
+        },
+        {
+            "datatype": "anat",
+            "suffix": "T2w",
+            "criteria": {
+                "SeriesDescription": "ABCD-T2_GE_original_*"
+            }
+        },
+        {
+            "datatype": "func",
+            "suffix": "bold",
+            "custom_entities": "task-rest",
+            "criteria": {
+                "SeriesDescription": "ABCD-rsfMRI_GE_original_*"
+            }
+        },
+        {
+            "datatype": "func",
+            "suffix": "bold",
+            "custom_entities": "task-SST",
+            "criteria": {
+                "SeriesDescription": "ABCD-SST-fMRI_GE_original_*"
+            }
+        },
+        {
+            "datatype": "func",
+            "suffix": "bold",
+            "custom_entities": "task-nback",
+            "criteria": {
+                "SeriesDescription": "ABCD-nBack-fMRI_GE_original_*"
+            }
+        },
+        {
+            "datatype": "func",
+            "suffix": "bold",
+            "custom_entities": "task-MID",
+            "criteria": {
+                "SeriesDescription": "ABCD-MID-fMRI_GE_original_*"
+            }
+        },
+        {
+            "datatype": "fmap",
+            "suffix": "epi",
+            "custom_entities": "acq-func_dir-AP",
+            "criteria": {
+                "SeriesDescription": "ABCD-fMRI-FM_GE_original_*",
+                "PhaseEncodingPolarityGE": "Flipped"
+            }
+        },
+        {
+            "datatype": "fmap",
+            "suffix": "epi",
+            "custom_entities": "acq-func_dir-AP",
+            "criteria": {
+                "SeriesDescription": "ABCD-fMRI-FM,*",
+                "PhaseEncodingPolarityGE": "Flipped"
+            }
+        },
+        {
+            "datatype": "fmap",
+            "suffix": "epi",
+            "custom_entities": "acq-func_dir-PA",
+            "criteria": {
+                "SeriesDescription": "ABCD-fMRI-FM_GE_original_*",
+                "PhaseEncodingPolarityGE": "Unflipped"
+            }
+        },
+        {
+            "datatype": "fmap",
+            "suffix": "epi",
+            "custom_entities": "acq-func_dir-PA",
+            "criteria": {
+                "SeriesDescription": "ABCD-fMRI-FM,*",
+                "PhaseEncodingPolarityGE": "Unflipped"
+            }
+        }
+    ]
+}

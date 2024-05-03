@@ -15,7 +15,7 @@ def existent(path):
     """
     if not Path(path).exists():
         raise argparse.ArgumentTypeError(f"{path} does not exist")
-    return Path(path)
+    return Path(path).absolute()
 
 
 def readable(path):
@@ -26,7 +26,7 @@ def readable(path):
     """
     if not os.access(path, os.R_OK):
         raise argparse.ArgumentTypeError(f"{path} is not readable")
-    return Path(path)
+    return Path(path).absolute()
 
 
 def writable(path):
@@ -37,7 +37,7 @@ def writable(path):
     """
     if not os.access(path, os.W_OK):
         raise argparse.ArgumentTypeError(f"{path} is not writable")
-    return Path(path)
+    return Path(path).absolute()
 
 
 def executable(path):
@@ -48,7 +48,7 @@ def executable(path):
     """
     if not os.access(path, os.X_OK):
         raise argparse.ArgumentTypeError(f"{path} is not executable")
-    return Path(path)
+    return Path(path).absolute()
 
 
 def available(path):
@@ -65,7 +65,7 @@ def available(path):
     if Path(path).exists():
         return writable(path)
     else:
-        return Path(path)
+        return Path(path).absolute()
 
 
 def cli():

@@ -2,6 +2,7 @@
 
 
 import argparse
+import os
 import pydra
 from pathlib import Path
 

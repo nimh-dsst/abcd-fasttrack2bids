@@ -166,7 +166,7 @@ def main():
             'output_tgz_root'
         ]
     )
-    download_wf.inputs.input_s3_links = args.input_s3_links.str
+    download_wf.inputs.input_s3_links = str(args.input_s3_links)
     download_wf.inputs.fasttrack_package_id = args.package_id
     download_wf.inputs.n_download = args.n_download
     download_wf.inputs.output_tgz_root = f'{args.output_dir}/TGZ'
@@ -256,7 +256,7 @@ def main():
         ]
     )
     dcm2bids_wf.inputs.input_dicom_root = unpack_wf.inputs.output_dicom_root
-    dcm2bids_wf.inputs.dcm2bids_config_json = args.input_dcm2bids_config.str
+    dcm2bids_wf.inputs.dcm2bids_config_json = str(args.input_dcm2bids_config)
     dcm2bids_wf.inputs.output_bids_root = f'{args.output_dir}/BIDS'
 
     dcm2bids_wf.add(

@@ -3,6 +3,70 @@
 
 import argparse
 import pydra
+from pathlib import Path
+
+
+# assistant functions
+def existent(path):
+    """
+    Check if a path exists
+    :param path: Path to check
+    :return: Existent path as a Path object
+    """
+    if not Path(path).exists():
+        raise argparse.ArgumentTypeError(f"{path} does not exist")
+    return Path(path)
+
+
+def readable(path):
+    """
+    Check if a path is readable
+    :param path: Path to check
+    :return: Readable path as a Path object
+    """
+    if not os.access(path, os.R_OK):
+        raise argparse.ArgumentTypeError(f"{path} is not readable")
+    return Path(path)
+
+
+def writable(path):
+    """
+    Check if a path is writable
+    :param path: Path to check
+    :return: Writable path as a Path object
+    """
+    if not os.access(path, os.W_OK):
+        raise argparse.ArgumentTypeError(f"{path} is not writable")
+    return Path(path)
+
+
+def executable(path):
+    """
+    Check if a path is executable
+    :param path: Path to check
+    :return: Executable path as a Path object
+    """
+    if not os.access(path, os.X_OK):
+        raise argparse.ArgumentTypeError(f"{path} is not executable")
+    return Path(path)
+
+
+def available(path):
+    """
+    Check if a path has a parent and is available to write to
+    :param path: Path to check
+    :return: Available path as a Path object
+    """
+    parent = Path(path).parent.resolve()
+    if not (parent.exists() and os.access(str(parent), os.W_OK)):
+        raise argparse.ArgumentTypeError(f"""{path} is either not writable or 
+                                          the parent directory does not exist""")
+
+    if Path(path).exists():
+        return writable(path)
+    else:
+        return Path(path)
+
 
 def cli():
 
@@ -10,14 +74,14 @@ def cli():
 
     parser.add_argument('-p', '--package-id', type=int, required=True,
                         help='The package ID of the NDA ABCD Fast-Track dataset you already packaged')
-    parser.add_argument('-q', '--input-nda-fastqc', type=str,
-                        help='The path to the abcd_fastqc01.txt file')
-    parser.add_argument('-s', '--input-s3-links', type=str, required=True,
+    parser.add_argument('-s', '--input-s3-links', type=readable, required=True,
                         help='The path to the S3 links TXT file')
-    parser.add_argument('-c', '--input-dcm2bids-config', type=str, required=True,
+    parser.add_argument('-c', '--input-dcm2bids-config', type=readable, required=True,
                         help='The path to the Dcm2Bids config JSON file')
-    parser.add_argument('-o', '--output-dir', type=str, required=True,
+    parser.add_argument('-o', '--output-dir', type=available, required=True,
                         help='The output directory')
+    parser.add_argument('-q', '--input-nda-fastqc', type=readable,
+                        help='The path to the abcd_fastqc01.txt file')
     parser.add_argument('--n-download', type=int, default=1,
                         help='The number of downloadcmd worker threads to use')
     parser.add_argument('--n-unpack', type=int, default=1,
@@ -101,7 +165,7 @@ def main():
             'output_tgz_root'
         ]
     )
-    download_wf.inputs.input_s3_links = args.input_s3_links
+    download_wf.inputs.input_s3_links = args.input_s3_links.str
     download_wf.inputs.fasttrack_package_id = args.package_id
     download_wf.inputs.n_download = args.n_download
     download_wf.inputs.output_tgz_root = f'{args.output_dir}/TGZ'
@@ -191,7 +255,7 @@ def main():
         ]
     )
     dcm2bids_wf.inputs.input_dicom_root = unpack_wf.inputs.output_dicom_root
-    dcm2bids_wf.inputs.dcm2bids_config_json = args.input_dcm2bids_config
+    dcm2bids_wf.inputs.dcm2bids_config_json = args.input_dcm2bids_config.str
     dcm2bids_wf.inputs.output_bids_root = f'{args.output_dir}/BIDS'
 
     dcm2bids_wf.add(

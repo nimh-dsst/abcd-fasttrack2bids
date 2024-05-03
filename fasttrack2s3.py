@@ -389,6 +389,10 @@ def cli():
                             "Options are:\n"
                             f"    {datatypes_str}")
 
+    # control.add_argument('-x', '--exclude', nargs='+', type=str, default=[],
+    #                     help="Space-separated strings to exclude within"
+    #                         "ftq_series_id. Defaults to no exclusions.")
+
     control.add_argument('-l', '--log-level', metavar='LEVEL',
                         choices=LOG_LEVELS, default='INFO',
                         help="Set the minimum logging level. Defaults to INFO.\n"

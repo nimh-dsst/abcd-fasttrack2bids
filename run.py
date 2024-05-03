@@ -10,7 +10,7 @@ def cli():
 
     parser.add_argument('-p', '--package-id', type=int, required=True,
                         help='The package ID of the NDA ABCD Fast-Track dataset you already packaged')
-    parser.add_argument('-q', '--input-nda-fastqc', type=str, required=True,
+    parser.add_argument('-q', '--input-nda-fastqc', type=str,
                         help='The path to the abcd_fastqc01.txt file')
     parser.add_argument('-s', '--input-s3-links', type=str, required=True,
                         help='The path to the S3 links TXT file')

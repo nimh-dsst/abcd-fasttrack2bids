@@ -95,13 +95,13 @@ def main():
     download_wf = pydra.Workflow(
         name="s32tgz",
         input_spec=[
-            'input_s3_file',
+            'input_s3_links',
             'fasttrack_package_id',
             'n_download',
             'output_tgz_root'
         ]
     )
-    download_wf.inputs.input_s3_file = args.input_s3_file
+    download_wf.inputs.input_s3_links = args.input_s3_links
     download_wf.inputs.fasttrack_package_id = args.package_id
     download_wf.inputs.n_download = args.n_download
     download_wf.inputs.output_tgz_root = f'{args.output_dir}/TGZ'
@@ -118,7 +118,7 @@ def main():
         pydra.ShellCommandTask(
             name='download',
             executable='downloadcmd',
-            args=f'-dp {download_wf.inputs.fasttrack_package_id} -t {download_wf.inputs.input_s3_file} -d {download_wf.inputs.output_tgz_root} --workerThreads {download_wf.inputs.n_download}'.split(' ')
+            args=f'-dp {download_wf.inputs.fasttrack_package_id} -t {download_wf.inputs.input_s3_links} -d {download_wf.inputs.output_tgz_root} --workerThreads {download_wf.inputs.n_download}'.split(' ')
         )
     )
 

@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "abcd-fasttrack2bids"
+version = "0.0.0"
+description = "A tool for converting ABCD Study data from the NDA's fast track collection to BIDS format."
+authors = ["Eric Earl <eric.earl@nih.gov>", "Dustin Moraczewski <dustin.moraczewski@nih.gov>"]
+license = "CC0-1.0"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "3.10.8"
+pydra = "0.23"
+dcm2bids = "^3.1.1"
+dcm2niix = "^1.0.20220715"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

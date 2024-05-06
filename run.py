@@ -87,13 +87,22 @@ def cli():
                         help='The number of downloadcmd worker threads to use')
     parser.add_argument('--n-unpack', type=int, default=1,
                         help='The number of tar xzf commands to run in parallel')
-    parser.add_argument('--n-dcm2bids', type=int, default=1,
-                        help='The number of dcm2bids commands to run in parallel')
+    parser.add_argument('--n-convert', type=int, default=1,
+                        help='The number of dcm2bids conversion commands to run in parallel')
 
     return parser.parse_args()
 
 
 @pydra.mark.task
+@pydra.mark.annotate(
+    {
+        'pattern': str,
+        'mode': str,
+        'return': {
+            'collection': list
+        }
+    }
+)
 def collect_glob(pattern, mode):
     from os.path import isfile, isdir
     from glob import glob
@@ -109,10 +118,39 @@ def collect_glob(pattern, mode):
 
 
 @pydra.mark.task
+@pydra.mark.annotate(
+    {
+        'bids_session_directory': str,
+        'config_file': str,
+        'output_dir': str,
+        'return': {
+            'args_list': list
+        }
+    }
+)
 def format_dcm2bids_args(bids_session_directory, config_file, output_dir):
     participant, session = bids_session_directory.split('/')[-2:]
-    args_list = f'-p {participant} -s {session} -c {config_file} -o {output_dir}'.split(' ')
+    args_list = f'-p {participant} -s {session} -d {bids_session_directory} -c {config_file} -o {output_dir}'.split(' ')
     return args_list
+
+
+@pydra.mark.task
+@pydra.mark.annotate(
+    {
+        'tgz_file': str,
+        'output_dir': str,
+        'return': {
+            'output_dir': str
+        }
+    }
+)
+def unpack_tgz(tgz_file, output_dir):
+    import tarfile
+
+    with tarfile.open(tgz_file, 'r:gz') as tar:
+        tar.extractall(output_dir)
+    
+    return output_dir
 
 
 def main():
@@ -120,43 +158,7 @@ def main():
     args = cli()
 
 
-    # # Add the fasttrack2s3 task to the workflow
-    # task1 = pydra.ShellCommandTask(
-    #     name='filter',
-    #     executable='python3',
-    #     args=f'{HERE}/fasttrack2s3.py {input_fastqc_file} {args.output_dir} -d {" ".join(datatypes)}'.split(' '),
-    # )
-
-
-    # # Add the collection of TGZ files task to the workflow
-    # task3 = collect_glob(pattern=f'{args.output_dir}/TGZ/*.tgz', mode='files')
-
-
-    # # Add the unpack task to the workflow
-    # task4 = pydra.ShellCommandTask(
-    #     name='unpack',
-    #     executable='tar',
-    #     args=f'-xzf {WHAT_GOES_HERE} -C {args.output_dir}/DICOM'.split(' ')
-    # )
-
-
-    # # Add the collection of BIDS sessions task to the workflow
-    # task5 = collect_glob(pattern=f'{args.output_dir}/DICOM/sub-*/ses-*', mode='directories')
-
-
-    # # Add BIDS participant and session extraction task to the workflow
-    # task6 = parse_bids_session(bids_session_directory=HOWS_THIS_WORK)
-
-
-    # # Add the dcm2bids task to the workflow
-    # task7 = pydra.ShellCommandTask(
-    #     name='dcm2bids',
-    #     executable='dcm2bids',
-    #     args=f'-p {task6.lzout.participant} -s {task6.lzout.session} -c {args.output_dir}/dcm2bids_v3_config.json -o {args.output_dir}/BIDS'.split(' ')
-    # )
-
-
-    # Create the NDA TGZ downloading workflow
+    ### Create the NDA TGZ downloading workflow ###
     download_wf = pydra.Workflow(
         name="s32tgz",
         input_spec=[
@@ -190,46 +192,55 @@ def main():
     download_wf.add(
         collect_glob(
             name='collect_tgzs',
-            pattern=f'{download_wf.inputs.output_tgz_root}/*.tgz',
+            pattern=f'{download_wf.inputs.output_tgz_root}/image03/*.tgz',
             mode='files'
         )
     )
 
     download_wf.set_output(
         [
-            ('output_tgzs', download_wf.collect_tgzs.lzout.out)
+            ('output_tgzs', download_wf.collect_tgzs.lzout.collection)
         ]
     )
 
+    # Run the download workflow
+    with pydra.Submitter(plugin='cf', n_procs=args.n_download) as submitter:
+        submitter(download_wf)
 
-    # Create the TGZ unpacking workflow
+    download_results = download_wf.result()
+    print(download_results)
+
+
+    ### Create the TGZ unpacking workflow ###
     unpack_wf = pydra.Workflow(
         name="tgz2dicom",
         input_spec=[
+            'input_tgz_root',
             'input_tgzs',
             'output_dicom_root'
         ]
     )
-    unpack_wf.inputs.input_tgzs = download_wf.lzout.output_tgzs
-    # unpack_wf.inputs.input_tgzs = collect_glob(pattern=f'{args.output_dir}/DICOM/sub-*/ses-*', mode='directories')
+    unpack_wf.inputs.input_tgz_root = f'{args.output_dir}/TGZ'
+    unpack_wf.inputs.input_tgzs = download_results.output.output_tgzs
     unpack_wf.inputs.output_dicom_root = f'{args.output_dir}/DICOM'
 
-    unpack_wf.add(
-        pydra.ShellCommandTask(
-            name='setup_dicom_dir',
-            executable='mkdir',
-            args=f'-p {unpack_wf.inputs.output_dicom_root}'.split(' ')
-        )
-    )
+    # unpack_wf.add(
+    #     pydra.ShellCommandTask(
+    #         name='setup_dicom_dir',
+    #         executable='mkdir',
+    #         args=f'-p {unpack_wf.inputs.output_dicom_root}'.split(' ')
+    #     )
+    # )
 
-    unpack_wf.split('input_tgzs', input_tgzs=unpack_wf.inputs.input_tgzs)
-    unpack_wf.add(
-        pydra.ShellCommandTask(
-            name='unpack',
-            executable='tar',
-            args=f'-xzf {unpack_wf.inputs.input_tgzs} -C {unpack_wf.inputs.output_dicom_root}'.split(' ')
-        )
-    )
+    # unpack_wf.split('input_tgzs', input_tgzs=unpack_wf.inputs.input_tgzs)
+    # unpack_wf.add(
+    #     unpack_tgz(
+    #         name='unpack_tgz',
+    #         tgz_file=unpack_wf.lzin.input_tgzs,
+    #         output_dir=unpack_wf.inputs.output_dicom_root
+    #     )
+    # )
+    # unpack_wf.combine('input_tgzs')
 
     unpack_wf.add(
         collect_glob(
@@ -241,12 +252,20 @@ def main():
 
     unpack_wf.set_output(
         [
-            ('output_bids_sessions', unpack_wf.collect_bids_sessions.lzout.out)
+            ('output_bids_sessions', unpack_wf.collect_bids_sessions.lzout.collection)
         ]
     )
 
-    # Create the DICOM to BIDS conversion workflow
-    dcm2bids_wf = pydra.Workflow(
+    # Run the unpack workflow
+    with pydra.Submitter(plugin='cf', n_procs=args.n_unpack) as submitter:
+        submitter(unpack_wf)
+
+    unpack_results = unpack_wf.result()
+    print(unpack_results)
+
+
+    ### Create the DICOM to BIDS conversion workflow ###
+    convert_wf = pydra.Workflow(
         name="dicom2bids",
         input_spec=[
             'input_sessions_list',
@@ -255,56 +274,53 @@ def main():
             'output_bids_root'
         ]
     )
-    dcm2bids_wf.inputs.input_dicom_root = unpack_wf.inputs.output_dicom_root
-    dcm2bids_wf.inputs.dcm2bids_config_json = str(args.input_dcm2bids_config)
-    dcm2bids_wf.inputs.output_bids_root = f'{args.output_dir}/BIDS'
+    convert_wf.inputs.input_dicom_root = f'{args.output_dir}/DICOM'
+    convert_wf.inputs.dcm2bids_config_json = str(args.input_dcm2bids_config)
+    convert_wf.inputs.output_bids_root = f'{args.output_dir}/BIDS'
 
-    dcm2bids_wf.add(
+    if type(unpack_results) is list and len(unpack_results) > 0:
+        convert_wf.inputs.input_sessions_list = unpack_results[0].output.output_bids_sessions
+    else:
+        convert_wf.inputs.input_sessions_list = unpack_results.output.output_bids_sessions
+
+    convert_wf.add(
         pydra.ShellCommandTask(
             name='setup_bids_dir',
             executable='mkdir',
-            args=f'-p {dcm2bids_wf.inputs.output_bids_root}'.split(' ')
+            args=f'-p {convert_wf.inputs.output_bids_root}'.split(' ')
         )
     )
 
-    dcm2bids_wf.split('input_sessions_list', input_sessions_list=unpack_wf.lzout.output_bids_sessions)
-    dcm2bids_wf.add(
+    convert_wf.split('input_sessions_list', input_sessions_list=convert_wf.inputs.input_sessions_list)
+    convert_wf.add(
         format_dcm2bids_args(
-            bids_session_directory=unpack_wf.lzout.output_bids_sessions,
-            config_file=dcm2bids_wf.inputs.dcm2bids_config_json,
-            output_dir=dcm2bids_wf.inputs.output_bids_root
+            name='format_args',
+            bids_session_directory=convert_wf.lzin.input_sessions_list,
+            config_file=convert_wf.inputs.dcm2bids_config_json,
+            output_dir=convert_wf.inputs.output_bids_root
         )
     )
 
-    dcm2bids_wf.add(
+    convert_wf.add(
         pydra.ShellCommandTask(
             name='dcm2bids',
             executable='dcm2bids',
-            args=dcm2bids_wf.format_dcm2bids_args.lzout.out
+            args=convert_wf.format_args.lzout.args_list
         )
     )
+    convert_wf.combine('input_sessions_list')
 
-    # My pydra fasttrack2bids workflow
+    convert_wf.set_output(
+        [
+            ('dcm2bids_arguments', convert_wf.format_args.lzout.args_list)
+        ]
+    )
 
-    # download
-    with pydra.Submitter(plugin='cf', n_procs=args.n_download) as submitter:
-        submitter(download_wf)
+    # Run the dicom2bids workflow
+    with pydra.Submitter(plugin='cf', n_procs=args.n_convert) as submitter:
+        submitter(convert_wf)
 
-    download_results = download_wf.result()
-    print(download_results)
-
-    # unpack
-    with pydra.Submitter(plugin='cf', n_procs=args.n_unpack) as submitter:
-        submitter(unpack_wf)
-
-    unpack_results = unpack_wf.result()
-    print(unpack_results)
-
-    # dicom2bids
-    with pydra.Submitter(plugin='cf', n_procs=args.n_dcm2bids) as submitter:
-        submitter(dcm2bids_wf)
-
-    dcm2bids_results = dcm2bids_wf.result()
+    dcm2bids_results = convert_wf.result()
     print(dcm2bids_results)
 
 

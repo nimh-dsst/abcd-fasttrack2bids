@@ -81,6 +81,8 @@ def cli():
                         help='The path to the Dcm2Bids config JSON file')
     parser.add_argument('-o', '--output-dir', type=available, required=True,
                         help='The output directory')
+    parser.add_argument('-t', '--temporary-dir', type=available,
+                        help='The temporary intermediary files directory')
     parser.add_argument('-q', '--input-nda-fastqc', type=readable,
                         help='The path to the abcd_fastqc01.txt file')
     parser.add_argument('--n-download', type=int, default=1,
@@ -171,7 +173,10 @@ def main():
     download_wf.inputs.input_s3_links = str(args.input_s3_links)
     download_wf.inputs.fasttrack_package_id = args.package_id
     download_wf.inputs.n_download = args.n_download
-    download_wf.inputs.output_tgz_root = f'{args.output_dir}/TGZ'
+    if args.temporary_dir != None:
+        download_wf.inputs.output_tgz_root = f'{args.temporary_dir}/TGZ'
+    else:
+        download_wf.inputs.output_tgz_root = f'{args.output_dir}/TGZ'
 
     download_wf.add(
         pydra.ShellCommandTask(
@@ -220,27 +225,31 @@ def main():
             'output_dicom_root'
         ]
     )
-    unpack_wf.inputs.input_tgz_root = f'{args.output_dir}/TGZ'
     unpack_wf.inputs.input_tgzs = download_results.output.output_tgzs
-    unpack_wf.inputs.output_dicom_root = f'{args.output_dir}/DICOM'
+    if args.temporary_dir != None:
+        unpack_wf.inputs.input_tgz_root = f'{args.temporary_dir}/TGZ'
+        unpack_wf.inputs.output_dicom_root = f'{args.temporary_dir}/DICOM'
+    else:
+        unpack_wf.inputs.input_tgz_root = f'{args.output_dir}/TGZ'
+        unpack_wf.inputs.output_dicom_root = f'{args.output_dir}/DICOM'
 
-    # unpack_wf.add(
-    #     pydra.ShellCommandTask(
-    #         name='setup_dicom_dir',
-    #         executable='mkdir',
-    #         args=f'-p {unpack_wf.inputs.output_dicom_root}'.split(' ')
-    #     )
-    # )
+    unpack_wf.add(
+        pydra.ShellCommandTask(
+            name='setup_dicom_dir',
+            executable='mkdir',
+            args=f'-p {unpack_wf.inputs.output_dicom_root}'.split(' ')
+        )
+    )
 
-    # unpack_wf.split('input_tgzs', input_tgzs=unpack_wf.inputs.input_tgzs)
-    # unpack_wf.add(
-    #     unpack_tgz(
-    #         name='unpack_tgz',
-    #         tgz_file=unpack_wf.lzin.input_tgzs,
-    #         output_dir=unpack_wf.inputs.output_dicom_root
-    #     )
-    # )
-    # unpack_wf.combine('input_tgzs')
+    unpack_wf.split('input_tgzs', input_tgzs=unpack_wf.inputs.input_tgzs)
+    unpack_wf.add(
+        unpack_tgz(
+            name='unpack_tgz',
+            tgz_file=unpack_wf.lzin.input_tgzs,
+            output_dir=unpack_wf.inputs.output_dicom_root
+        )
+    )
+    unpack_wf.combine('input_tgzs')
 
     unpack_wf.add(
         collect_glob(
@@ -274,9 +283,13 @@ def main():
             'output_bids_root'
         ]
     )
-    convert_wf.inputs.input_dicom_root = f'{args.output_dir}/DICOM'
     convert_wf.inputs.dcm2bids_config_json = str(args.input_dcm2bids_config)
-    convert_wf.inputs.output_bids_root = f'{args.output_dir}/BIDS'
+    if args.temporary_dir != None:
+        convert_wf.inputs.input_dicom_root = f'{args.temporary_dir}/DICOM'
+        convert_wf.inputs.output_bids_root = f'{args.temporary_dir}/BIDS'
+    else:
+        convert_wf.inputs.input_dicom_root = f'{args.output_dir}/DICOM'
+        convert_wf.inputs.output_bids_root = f'{args.output_dir}/BIDS'
 
     if type(unpack_results) is list and len(unpack_results) > 0:
         convert_wf.inputs.input_sessions_list = unpack_results[0].output.output_bids_sessions
@@ -322,6 +335,51 @@ def main():
 
     dcm2bids_results = convert_wf.result()
     print(dcm2bids_results)
+
+
+    if args.temporary_dir == None:
+        return
+    else:
+        pass
+
+    ### Create the BIDS move and clean workflow ###
+    cleanup_wf = pydra.Workflow(
+        name="move_bids",
+        input_spec=[
+            'temporary_dir',
+            'output_bids_root'
+        ]
+    )
+    cleanup_wf.inputs.temporary_dir = args.temporary_dir
+    cleanup_wf.inputs.output_bids_root = args.output_dir
+
+    # Copy the BIDS directory to the output directory
+    cleanup_wf.add(
+        pydra.ShellCommandTask(
+            name='move_bids',
+            executable='mv',
+            args=f'{cleanup_wf.inputs.temporary_dir}/BIDS/* {cleanup_wf.inputs.output_bids_root}/'.split(' ')
+        )
+    )
+
+    # Clean up
+    cleanup_wf.add(
+        pydra.ShellCommandTask(
+            name='cleanup',
+            executable='rm',
+            args=f'-rf {cleanup_wf.inputs.temporary_dir}/BIDS {cleanup_wf.inputs.temporary_dir}/DICOM {cleanup_wf.inputs.temporary_dir}/TGZ'.split(' ')
+        )
+    )
+
+    # Run the move and clean workflow
+    with pydra.Submitter(plugin='cf') as submitter:
+        submitter(cleanup_wf)
+
+    cleanup_results = cleanup_wf.result()
+    print(cleanup_results)
+
+    return
+
 
 
 if __name__ == '__main__':

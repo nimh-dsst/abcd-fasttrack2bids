@@ -30,6 +30,7 @@ import os
 import pandas
 import re
 
+from copy import deepcopy
 from logging import debug, info, warning, error, critical
 from pathlib import Path
 
@@ -393,6 +394,10 @@ def cli():
     #                     help="Space-separated strings to exclude within"
     #                         "ftq_series_id. Defaults to no exclusions.")
 
+    control.add_argument('-sep', '--separate', action='store_true', default=False,
+                        help="Separate the output file by session. Defaults "
+                            "to False.")
+
     control.add_argument('-l', '--log-level', metavar='LEVEL',
                         choices=LOG_LEVELS, default='INFO',
                         help="Set the minimum logging level. Defaults to INFO.\n"
@@ -582,6 +587,13 @@ def main():
 
     debug(suffix)
 
+    # check if the separate flag is being flown
+    if args.separate:
+        output_dir = Path(f"{args.output_dir}/{args.qc_input.stem}_{suffix}")
+        output_dir.mkdir(exist_ok=True)
+    else:
+        output_dir = args.output_dir
+
     # write out the S3 links file
     output_s3 = args.output_dir / f"{args.qc_input.stem}_{suffix}_s3links.txt"
 
@@ -598,6 +610,28 @@ def main():
     input = input.sort_index()  # sort by index
     input.to_csv(output_qc, sep='\t', quoting=csv.QUOTE_ALL, index=False)
 
+    if args.separate:
+        # for every subject+session pair
+        for subber, sesser in unique_subses:
+            # write out a "mini" S3 links file
+            output_mini_s3 = output_dir / f"sub-{subber}_ses-{sesser}_s3links.txt"
+
+            mask = input['ftq_series_id'].str.contains(f"{subber}_{sesser}", flags=re.IGNORECASE)
+            subses_output = deepcopy(input[mask])
+
+            with open(output_mini_s3, 'w') as f:
+                for series in subses_output['file_source']:
+                    f.write(f"{series}\n")
+
+            # write out a "mini" qc_input file
+            output_mini_qc = output_dir / f"sub-{subber}_ses-{sesser}_filtered.txt"
+
+            # append back in the row 0 for completeness
+            subses_output.loc[-1] = row0
+            subses_output.index = subses_output.index + 1
+            subses_output = subses_output.sort_index()
+            subses_output.to_csv(output_mini_qc, sep='\t', quoting=csv.QUOTE_ALL, index=False)
+            del(subses_output)
 
 if __name__ == '__main__':
     main()

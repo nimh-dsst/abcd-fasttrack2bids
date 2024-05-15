@@ -81,7 +81,7 @@ def cli():
                         help='The path to the Dcm2Bids config JSON file')
     parser.add_argument('-o', '--output-dir', type=available, required=True,
                         help='The output directory')
-    parser.add_argument('-t', '--temporary-dir', type=available,
+    parser.add_argument('-t', '--temporary-dir', type=writable,
                         help='The temporary intermediary files directory')
     parser.add_argument('-q', '--input-nda-fastqc', type=readable,
                         help='The path to the abcd_fastqc01.txt file')
@@ -369,6 +369,12 @@ def main():
             executable='rm',
             args=f'-rf {cleanup_wf.inputs.temporary_dir}/BIDS {cleanup_wf.inputs.temporary_dir}/DICOM {cleanup_wf.inputs.temporary_dir}/TGZ'.split(' ')
         )
+    )
+
+    cleanup_wf.set_output(
+        [
+            ('output_bids_root', cleanup_wf.inputs.output_bids_root)
+        ]
     )
 
     # Run the move and clean workflow

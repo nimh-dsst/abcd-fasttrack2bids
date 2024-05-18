@@ -7,11 +7,12 @@ license = "CC0-1.0"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "3.10.8"
-pydra = "0.23"
+python = "^3.8"
 dcm2bids = "^3.1.1"
 dcm2niix = "^1.0.20220715"
-
+nda-tools = "^0.2.27"
+nipype = "^1.8.6"
+keyrings-alt = "^5.0.1"
 
 [build-system]
 requires = ["poetry-core"]

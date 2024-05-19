@@ -93,7 +93,7 @@ def cli():
                         help='The temporary intermediary files directory')
     parser.add_argument('-q', '--input-nda-fastqc', type=readable,
                         help='The path to the abcd_fastqc01.txt file')
-    parser.add_argument('-z', '--preserve', choices=['TGZ', 'DICOM', 'BIDS'], default=['BIDS'], nargs='+',
+    parser.add_argument('-z', '--preserve', choices=['LOGS', 'TGZ', 'DICOM', 'BIDS'], default=['BIDS'], nargs='+',
                         help='Select which intermediary files to preserve, only BIDS is preserved by default')
     parser.add_argument('--n-download', type=int, default=1,
                         help='The number of downloadcmd worker threads to use')
@@ -154,36 +154,41 @@ def main():
     output_bids_root = f'{output_dir}/BIDS'
     pipeline_base_dir = f'{output_dir}/pipeline'
 
-    # make the TGZ directory
-    mkdir_tgz = Node(
-        CommandLine('mkdir', args=f'-p {output_tgz_root}'),
-        name='mkdir_tgz')
+    if args.preserve == ['LOGS']:
+        error('Only the LOGS option was selected to be preserved. You MUST choose to preserve something besides LOGS to produce files.')
+        return
+    else:
 
-    # download the TGZ files
-    downloadcmd = Node(
-        CommandLine('downloadcmd',
-            args=f'-dp {args.package_id} -t {str(args.input_s3_links)} -d {output_tgz_root} --workerThreads {args.n_download}'),
-        name='downloadcmd')
+        # make the TGZ directory
+        mkdir_tgz = Node(
+            CommandLine('mkdir', args=f'-p {output_tgz_root}'),
+            name='mkdir_tgz')
 
-    ### Create the NDA TGZ downloading workflow ###
-    download_wf = Workflow(
-        name="download",
-        base_dir=pipeline_base_dir,
-    )
+        # download the TGZ files
+        downloadcmd = Node(
+            CommandLine('downloadcmd',
+                args=f'-dp {args.package_id} -t {str(args.input_s3_links)} -d {output_tgz_root} --workerThreads {args.n_download}'),
+            name='downloadcmd')
 
-    download_wf.add_nodes([
-        mkdir_tgz,
-        downloadcmd,
-    ])
+        ### Create the NDA TGZ downloading workflow ###
+        download_wf = Workflow(
+            name="download",
+            base_dir=pipeline_base_dir,
+        )
 
-    download_wf.connect([
-        (mkdir_tgz, downloadcmd, []),
-    ])
+        download_wf.add_nodes([
+            mkdir_tgz,
+            downloadcmd,
+        ])
 
-    # Run the download workflow
-    download_wf.write_graph("download.dot")
-    download_results = download_wf.run(plugin='MultiProc', plugin_args={'n_procs' : args.n_download})
-    debug(download_results)
+        download_wf.connect([
+            (mkdir_tgz, downloadcmd, []),
+        ])
+
+        # Run the download workflow
+        download_wf.write_graph("download.dot")
+        download_results = download_wf.run(plugin='MultiProc', plugin_args={'n_procs' : args.n_download})
+        debug(download_results)
 
     # decide whether or not to continue with the unpacking
     if args.preserve == ['TGZ']:
@@ -312,12 +317,34 @@ def main():
 
 
     if 'BIDS' in args.preserve:
+        # make the BIDS rawdata output directory
+        mkdir_bids = Node(
+            CommandLine('mkdir', args=f'-p {cleanup_dir}/rawdata'),
+            name='mkdir_bids')
+        mkdir_bids_results = mkdir_bids.run()
+        debug(mkdir_bids_results)
+
         # move the BIDS files to the output directory
         rsync_bids = Node(
-            CommandLine('rsync', args=f'-art {output_bids_root}/* {cleanup_dir}/'),
+            CommandLine('rsync', args=f'-art {output_bids_root}/sub-* {cleanup_dir}/rawdata/'),
             name='rsync_bids')
         rsync_bids_results = rsync_bids.run()
         debug(rsync_bids_results)
+
+        if 'LOGS' in args.preserve:
+            # make the BIDS LOGS output directory
+            mkdir_bids_logs = Node(
+                CommandLine('mkdir', args=f'-p {cleanup_dir}/code/tmp_dcm2bids/log'),
+                name='mkdir_bids_logs')
+            mkdir_bids_logs_results = mkdir_bids_logs.run()
+            debug(mkdir_bids_logs_results)
+
+            # move the LOG files to the output directory
+            rsync_bids_logs = Node(
+                CommandLine('rsync', args=f'-art {output_bids_root}/tmp_dcm2bids/log/*.log {cleanup_dir}/code/tmp_dcm2bids/log/'),
+                name='rsync_bids_logs')
+            rsync_bids_logs_results = rsync_bids_logs.run()
+            debug(rsync_bids_logs_results)
 
     if 'DICOM' in args.preserve:
         # make the DICOM sourcedata output directory
@@ -350,6 +377,22 @@ def main():
         debug(rsync_tgz_results)
 
 
+    if 'LOGS' in args.preserve:
+        # make the LOGS output directory
+        mkdir_logs = Node(
+            CommandLine('mkdir', args=f'-p {cleanup_dir}/code/{pipeline_suffix}'),
+            name='mkdir_logs')
+        mkdir_logs_results = mkdir_logs.run()
+        debug(mkdir_logs_results)
+
+        # move the LOG files to the output directory
+        rsync_logs = Node(
+            CommandLine('rsync', args=f'-art {pipeline_base_dir}/download {pipeline_base_dir}/unpack {pipeline_base_dir}/convert {cleanup_dir}/code/{pipeline_suffix}/'),
+            name='rsync_logs')
+        rsync_logs_results = rsync_logs.run()
+        debug(rsync_logs_results)
+
+
     if args.temporary_dir != None:
         # remove the temporary directory
         rm_tmp = Node(
@@ -362,9 +405,6 @@ def main():
 
     rm_tmp_results = rm_tmp.run()
     debug(rm_tmp_results)
-
-
-    ### @TODO: OPTIONALLY KEEP THE LOGS AFTER RUNNING ###
 
 
 if __name__ == '__main__':

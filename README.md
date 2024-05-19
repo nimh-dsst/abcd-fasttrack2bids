@@ -10,15 +10,26 @@
 - [ ] Add additonal option to save out logs to a specific file.
 - [ ] Add levels of log messages of warning/caution for the user to know what's going on with datatypes specifically.
 
-### `run.py`
+### Nipype `pipeline.py`
+
+- [ ] Always save the `sourcedata` `func` event files.
+
+### Pydra `run.py` (work-in-progress)
 
 - [ ] Make the Pydra `run.py` script take as input either a single `abcd_fastqc01.txt` file, or a directory of them (to prepare for swarm submission).
 - [ ] Add what's necessary to `run.py` to download to, work on, copy back from a temporary directory, and then delete the temporary directory contents responsibly.
 - [ ] Add a flag to `run.py` to optionally run bids-validator on the output BIDS directory.
 
-### Others
+### Other Files
 
 - [ ] Improve this `README.md` with a walkthrough of preparing the two NDA packages necessary for using this.
+
+### Testing
+
+- [ ] Test the `pipeline.py` script on a mixed set of participants instead of individual sessions.
+- [ ] Test the `pipeline.py` script on a mixed set of sessions, including some same-participant-different-sessions.
+- [ ] Test the `pipeline.py` script stops before executing the convert workflow if BIDS is not provided in the `--preserve` option.
+- [ ] Test the `pipeline.py` script stops before executing the unpack workflow if both BIDS and TGZ are not provided in the `--preserve` option.
 
 ## Operating Procedure
 

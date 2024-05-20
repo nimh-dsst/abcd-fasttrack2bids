@@ -94,7 +94,7 @@ def cli():
     parser.add_argument('-q', '--input-nda-fastqc', type=readable,
                         help='The path to the abcd_fastqc01.txt file')
     parser.add_argument('-z', '--preserve', choices=['LOGS', 'TGZ', 'DICOM', 'BIDS'], default=['BIDS'], nargs='+',
-                        help='Select which intermediary files to preserve, only BIDS is preserved by default')
+                        help='Select one or more file types to preserve, only BIDS is preserved by default')
     parser.add_argument('--n-download', type=int, default=1,
                         help='The number of downloadcmd worker threads to use')
     parser.add_argument('--n-unpack', type=int, default=1,
@@ -132,6 +132,55 @@ def unpack_tgz(tgz_file, output_dir):
         tar.extractall(output_dir)
     
     return output_dir
+
+
+def retrieve_task_events(input_root, output_root):
+    import os
+    import shutil
+
+    task_dict = {
+        'MID': [],
+        'SST': [],
+        'nback': []
+    }
+
+    if output_root.endswith('sourcedata'):
+        print('WARNING: output_root should not end with sourcedata, correcting...')
+        bids_root = os.path.abspath(output_root.replace('sourcedata', '').rstrip('/'))
+    else:
+        bids_root = os.path.abspath(output_root)
+
+    for root, dirs, files in os.walk(input_root):
+        if not root.endswith('func'):
+            continue
+        for file in files:
+            if 'EventRelatedInformation.' in file:        
+                if 'MID' in file:
+                    task = 'MID'
+                elif 'SST' in file:
+                    task = 'SST'
+                elif 'nBack' in file:
+                    task = 'nback'
+                else:
+                    print(f'ERROR: Unknown task in {file}')
+
+                task_dict[task].append(os.path.join(root, file))
+
+    for task in task_dict:
+        task_list = sorted(task_dict[task])
+
+        for i, task_file in enumerate(task_list):
+            fileparts = task_file.split('/')
+            subject = fileparts[-4]
+            session = fileparts[-3]
+            run = i + 1
+            ext = task_file.split('.')[-1]
+
+            output_path = f'{bids_root}/sourcedata/{subject}/{session}/func/{subject}_{session}_task-{task}_run-{run:02}_bold_EventRelatedInformation.{ext}'
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            shutil.copy(task_file, output_path)
+
+    return
 
 
 def main():
@@ -330,6 +379,18 @@ def main():
             name='rsync_bids')
         rsync_bids_results = rsync_bids.run()
         debug(rsync_bids_results)
+
+        # retrieve the task events
+        task_events = Node(
+            Function(
+                function=retrieve_task_events,
+                input_names=['input_root', 'output_root']
+            ),
+            name='task_events')
+        task_events.inputs.input_root = output_dicom_root
+        task_events.inputs.output_root = cleanup_dir
+        task_events_results = task_events.run()
+        debug(task_events_results)
 
         if 'LOGS' in args.preserve:
             # make the BIDS LOGS output directory

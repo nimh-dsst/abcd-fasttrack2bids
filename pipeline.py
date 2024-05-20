@@ -137,6 +137,7 @@ def unpack_tgz(tgz_file, output_dir):
 def retrieve_task_events(input_root, output_root):
     import os
     import shutil
+    from pathlib import Path
 
     task_dict = {
         'MID': [],
@@ -144,13 +145,13 @@ def retrieve_task_events(input_root, output_root):
         'nback': []
     }
 
-    if output_root.endswith('sourcedata'):
+    if str(Path(output_root)).endswith('sourcedata'):
         print('WARNING: output_root should not end with sourcedata, correcting...')
-        bids_root = os.path.abspath(output_root.replace('sourcedata', '').rstrip('/'))
+        bids_root = str(Path(output_root).resolve().replace('sourcedata', '').rstrip('/'))
     else:
-        bids_root = os.path.abspath(output_root)
+        bids_root = str(Path(output_root).resolve())
 
-    for root, dirs, files in os.walk(input_root):
+    for root, dirs, files in os.walk(str(Path(input_root).resolve())):
         if not root.endswith('func'):
             continue
         for file in files:

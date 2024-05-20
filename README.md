@@ -4,9 +4,9 @@
 
 ### `fasttrack2s3.py`
 
+- [ ] Add flag to grab `--only-new` given a DSST ABCD fast-track `scans.tsv` file.
 - [ ] Make "special" inclusions and exclusions, like "Replaced" or ftq_complete==1, easier to do.
 - [ ] Add a flag to optionally output one `abcd_fastqc01.txt` file per BIDS subject+session pairing instead of just one big file.
-- [ ] Add flag to grab `--only-new` given a DSST ABCD fast-track `scans.tsv` file.
 - [ ] Add additonal option to save out logs to a specific file.
 - [ ] Add levels of log messages of warning/caution for the user to know what's going on with datatypes specifically.
 

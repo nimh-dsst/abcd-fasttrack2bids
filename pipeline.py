@@ -395,14 +395,14 @@ def main():
         if 'LOGS' in args.preserve:
             # make the BIDS LOGS output directory
             mkdir_bids_logs = Node(
-                CommandLine('mkdir', args=f'-p {cleanup_dir}/code/tmp_dcm2bids/log'),
+                CommandLine('mkdir', args=f'-p {cleanup_dir}/code/logs/tmp_dcm2bids/log'),
                 name='mkdir_bids_logs')
             mkdir_bids_logs_results = mkdir_bids_logs.run()
             debug(mkdir_bids_logs_results)
 
             # move the LOG files to the output directory
             rsync_bids_logs = Node(
-                CommandLine('rsync', args=f'-art {output_bids_root}/tmp_dcm2bids/log/*.log {cleanup_dir}/code/tmp_dcm2bids/log/'),
+                CommandLine('rsync', args=f'-art {output_bids_root}/tmp_dcm2bids/log/*.log {cleanup_dir}/code/logs/tmp_dcm2bids/log/'),
                 name='rsync_bids_logs')
             rsync_bids_logs_results = rsync_bids_logs.run()
             debug(rsync_bids_logs_results)
@@ -441,14 +441,14 @@ def main():
     if 'LOGS' in args.preserve:
         # make the LOGS output directory
         mkdir_logs = Node(
-            CommandLine('mkdir', args=f'-p {cleanup_dir}/code/{pipeline_suffix}'),
+            CommandLine('mkdir', args=f'-p {cleanup_dir}/code/logs/{pipeline_suffix}'),
             name='mkdir_logs')
         mkdir_logs_results = mkdir_logs.run()
         debug(mkdir_logs_results)
 
         # move the LOG files to the output directory
         rsync_logs = Node(
-            CommandLine('rsync', args=f'-art {pipeline_base_dir}/download {pipeline_base_dir}/unpack {pipeline_base_dir}/convert {cleanup_dir}/code/{pipeline_suffix}/'),
+            CommandLine('rsync', args=f'-art {pipeline_base_dir}/download {pipeline_base_dir}/unpack {pipeline_base_dir}/convert {cleanup_dir}/code/logs/{pipeline_suffix}/'),
             name='rsync_logs')
         rsync_logs_results = rsync_logs.run()
         debug(rsync_logs_results)

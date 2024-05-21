@@ -12,7 +12,7 @@
 
 ### Nipype `pipeline.py`
 
-- [ ] Always save the `sourcedata` `func` event files if `BIDS` is provided in the `--preserve` option.
+- [ ] Fix the event file copies to the `sourcedata` directory to be numbered correctly among many subjects.
 - [ ] Make the script take as input either a single `abcd_fastqc01.txt` file, or a directory of them (to prepare for swarm submission).
 - [ ] Add a flag to optionally run bids-validator on the output BIDS directory.
 

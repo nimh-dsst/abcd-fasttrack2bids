@@ -139,17 +139,13 @@ def retrieve_task_events(input_root, output_root):
     import shutil
     from pathlib import Path
 
-    task_dict = {
-        'MID': [],
-        'SST': [],
-        'nback': []
-    }
-
     if str(Path(output_root)).endswith('sourcedata'):
         print('WARNING: output_root should not end with sourcedata, correcting...')
         bids_root = str(Path(output_root).resolve().replace('sourcedata', '').rstrip('/'))
     else:
         bids_root = str(Path(output_root).resolve())
+
+    collection = {}
 
     for root, dirs, files in os.walk(str(Path(input_root).resolve())):
         if not root.endswith('func'):
@@ -165,21 +161,33 @@ def retrieve_task_events(input_root, output_root):
                 else:
                     print(f'ERROR: Unknown task in {file}')
 
-                task_dict[task].append(os.path.join(root, file))
+                sub = root.split('/')[-3]
+                ses = root.split('/')[-2]
 
-    for task in task_dict:
-        task_list = sorted(task_dict[task])
+                if sub not in collection:
+                    collection[sub] = {}
+                if ses not in collection[sub]:
+                    collection[sub][ses] = {}
+                if task not in collection[sub][ses]:
+                    collection[sub][ses][task] = []
 
-        for i, task_file in enumerate(task_list):
-            fileparts = task_file.split('/')
-            subject = fileparts[-4]
-            session = fileparts[-3]
-            run = i + 1
-            ext = task_file.split('.')[-1]
+                collection[sub][ses][task].append(os.path.join(root, file))
 
-            output_path = f'{bids_root}/sourcedata/{subject}/{session}/func/{subject}_{session}_task-{task}_run-{run:02}_bold_EventRelatedInformation.{ext}'
-            os.makedirs(os.path.dirname(output_path), exist_ok=True)
-            shutil.copy(task_file, output_path)
+    for sub in collection:
+        for ses in collection[sub]:
+            for task in collection[sub][ses]:
+                task_list = sorted(collection[sub][ses][task])
+
+                for i, task_file in enumerate(task_list):
+                    fileparts = task_file.split('/')
+                    subject = fileparts[-4]
+                    session = fileparts[-3]
+                    run = i + 1
+                    ext = task_file.split('.')[-1]
+
+                    output_path = f'{bids_root}/sourcedata/{subject}/{session}/func/{subject}_{session}_task-{task}_run-{run:02}_bold_EventRelatedInformation.{ext}'
+                    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+                    shutil.copy(task_file, output_path)
 
     return
 

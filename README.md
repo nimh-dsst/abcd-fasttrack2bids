@@ -2,7 +2,7 @@
 
 ## To Do
 
-### `fasttrack2s3.py`
+### `fasttrack2s3.py` - Fast Track Filter
 
 - [ ] Add flag to grab `--only-new` given a DSST ABCD fast-track `scans.tsv` file.
 - [ ] Make "special" inclusions and exclusions, like "Replaced" or ftq_complete==1, easier to do.
@@ -10,19 +10,22 @@
 - [ ] Add additonal option to save out logs to a specific file.
 - [ ] Add levels of log messages of warning/caution for the user to know what's going on with datatypes specifically.
 
-### Nipype `pipeline.py`
+### `pipeline.py` - Download --> Unpack --> Convert Pipeline
 
 - [ ] Fix the event file copies to the `sourcedata` directory to be numbered correctly among many subjects.
 - [ ] Make the script take as input either a single `abcd_fastqc01.txt` file, or a directory of them (to prepare for swarm submission).
 - [ ] Add a flag to optionally run bids-validator on the output BIDS directory.
 
-### Other Files
+### `bids_corrections.py` - Automated BIDS Corrections
+
+- [ ] Add a flag to optionally run bids-validator on the output BIDS directory.
+
+### `README.md` - This file
 
 - [ ] Improve this `README.md` with a walkthrough of preparing the two NDA packages necessary for using this.
 
 ### Testing
 
-- [ ] Test `pipeline.py` on a mixed set of participants instead of individual sessions.
 - [ ] Test `pipeline.py` on a mixed set of sessions, including some same-participant-different-sessions.
 - [ ] Test `pipeline.py` stops before executing the convert workflow if BIDS is not provided in the `--preserve` option.
 - [ ] Test `pipeline.py` stops before executing the unpack workflow if both BIDS and TGZ are not provided in the `--preserve` option.

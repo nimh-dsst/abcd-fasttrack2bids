@@ -49,4 +49,8 @@ Each numbered part of this list is one tool, which can be used independently. I 
 
 ## Acknowledgements
 
-Thanks to [`DCAN-Labs/abcd-dicom2bids`](https://github.com/DCAN-Labs/abcd-dicom2bids) for inspiration of the dcm2bids version 3 configuration JSON and general order of operations for the NDA's fast track conversion to BIDS.
+Thanks to [`DCAN-Labs/abcd-dicom2bids`](https://github.com/DCAN-Labs/abcd-dicom2bids) for:
+
+1. Inspiration of the dcm2bids version 3 configuration JSON
+1. General order of operations for the NDA's fast track conversion to BIDS
+1. Most of the options in `bids_corrections.py`

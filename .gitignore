@@ -3,4 +3,5 @@
 .vscode/
 utilities/
 doit/
+__pycache__/
 poetry.lock

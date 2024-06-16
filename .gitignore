@@ -6,3 +6,4 @@ doit/
 __pycache__/
 poetry.lock
 crash-*.pklz
+*.log

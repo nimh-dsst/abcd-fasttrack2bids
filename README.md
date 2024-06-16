@@ -4,17 +4,19 @@
 
 ### `fasttrack2s3.py` - Fast Track Filter
 
+- [ ] **Make "special" inclusions and exclusions, like "Replaced" or ftq_complete==1, easier to do.**
 - [ ] Add flag to grab `--only-new` given a DSST ABCD fast-track `scans.tsv` file.
-- [ ] Make "special" inclusions and exclusions, like "Replaced" or ftq_complete==1, easier to do.
-- [ ] Add a flag to optionally output one `abcd_fastqc01.txt` file per BIDS subject+session pairing instead of just one big file.
 - [ ] Add additonal option to save out logs to a specific file.
 - [ ] Add levels of log messages of warning/caution for the user to know what's going on with datatypes specifically.
 
 ### `pipeline.py` - Download --> Unpack --> Convert Pipeline
 
-- [ ] Fix the event file copies to the `sourcedata` directory to be numbered correctly among many subjects.
-- [ ] Make the script take as input either a single `abcd_fastqc01.txt` file, or a directory of them (to prepare for swarm submission).
+- [x] ~~Fix the event file copies to the `sourcedata` directory to be numbered correctly among many subjects.~~
+- [ ] Don't halt the whole pipeline if a single session fails to convert.
+- [ ] Don't halt the whole pipeline if a single session's single series fails to convert.
+- [ ] Make the script take as input either a single `s3links.txt` file, or a directory of them (to prepare for swarm submission).
 - [ ] Add a flag to optionally run bids-validator on the output BIDS directory.
+- [ ] Implement the `--n-all` option (it's not tied to anything right now...)
 
 ### `bids_corrections.py` - Automated BIDS Corrections
 
@@ -46,6 +48,16 @@ Each numbered part of this list is one tool, which can be used independently. I 
 ## Improvement Ideas
 
 - Perhaps add arguments to a top-level wrapper, `fasttrack2bids.py`, to allow for controlling the overall workflow with some sane defaults and running options.
+
+## Examples
+
+### `fasttrack2s3.py`
+
+### `pipeline.py`
+
+
+
+### `bids_corrections.py`
 
 ## Acknowledgements
 

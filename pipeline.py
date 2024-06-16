@@ -29,8 +29,6 @@ def cli():
                         help='The output directory')
     parser.add_argument('-t', '--temporary-dir', type=writable,
                         help='The temporary intermediary files directory')
-    parser.add_argument('-q', '--input-nda-fastqc', type=readable,
-                        help='The path to the abcd_fastqc01.txt file')
     parser.add_argument('-z', '--preserve', choices=['LOGS', 'TGZ', 'DICOM', 'BIDS'], default=['BIDS'], nargs='+',
                         help='Select one or more file types to preserve, only BIDS is preserved by default')
     parser.add_argument('-n', '--n-all', type=int, default=1,

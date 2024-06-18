@@ -513,12 +513,20 @@ def main():
         mkdir_logs_results = mkdir_logs.run()
         debug(mkdir_logs_results)
 
-        # move the LOG files to the output directory
+        # sync the LOG files to the output directory
         rsync_logs = Node(
             CommandLine('rsync', args=f'-art {pipeline_base_dir}/download {pipeline_base_dir}/unpack {pipeline_base_dir}/convert {cleanup_dir}/code/logs/{pipeline_suffix}/'),
             name='rsync_logs')
         rsync_logs_results = rsync_logs.run()
         debug(rsync_logs_results)
+
+        if not args.disable_workaround:
+            # sync the workaround LOG files to the output directory
+            rsync_workaround = Node(
+                CommandLine('rsync', args=f'-art {pipeline_base_dir}/workaround {cleanup_dir}/code/logs/{pipeline_suffix}/'),
+                name='rsync_workaround')
+            rsync_workaround_results = rsync_workaround.run()
+            debug(rsync_workaround_results)
 
 
     if args.temporary_dir != None:

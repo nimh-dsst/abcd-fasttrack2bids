@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import pydicom
 
 from logging import debug, info, warning, error, basicConfig
 from nipype import Workflow
@@ -39,6 +40,13 @@ def cli():
                         help='The number of tar xzf commands to run in parallel')
     parser.add_argument('--n-convert', type=int, default=1,
                         help='The number of dcm2bids conversion commands to run in parallel')
+    parser.add_argument('-d', '--disable-workaround', action='store_true',
+                        help='By default (when present), a "corrupt volume" in any func run '
+                            'DICOM series [where the first DICOM contains "=RawDataStorage" '
+                            'in field (0002,0002)] is deleted after unpacking and before '
+                            'conversion to BIDS. This flag disables that default feature in '
+                            'order to preserve the "corrupt volume" DICOMs. This flag will '
+                            'make dcm2niix fail.')
 
     return parser.parse_args()
 
@@ -70,6 +78,50 @@ def unpack_tgz(tgz_file, output_dir):
         tar.extractall(output_dir)
     
     return output_dir
+
+
+def corrupt_volume_check(func_dcm):
+    import os
+    import pydicom
+
+    dicom_one_meta = pydicom.dcmread(func_dcm)
+
+    if dicom_one_meta.file_meta.MediaStorageSOPClassUID.name == 'Raw Data Storage':
+        func_run = os.path.dirname(func_dcm)
+
+    else:
+        func_run = ''
+
+    return func_run
+
+
+def corrupt_volume_removal(func_run):
+    import os
+    import pydicom
+    from glob import glob
+
+    if func_run == '':
+        return False
+
+    else:
+        # in dicom_one, grab the number of temporal positions (2001,1081) and check the number of slices per time point is 60
+        dicom_one = glob(f'{func_run}/*_dicom000001.dcm')[0]
+        dicom_one_meta = pydicom.dcmread(dicom_one)
+        num_temporal_positions = int(dicom_one_meta[0x2001,0x1081].value)
+        func_run_dicoms = [dicom for dicom in glob(f'{func_run}/*.dcm')]
+
+        # if the number of slices per time point is not 60, print an error message
+        if num_temporal_positions * 60 != len(func_run_dicoms):
+            raise ValueError(f'ERROR: {func_run} has {len(func_run_dicoms)} DICOMs, but {num_temporal_positions} temporal positions X 60 does not equal {len(func_run_dicoms)}')
+
+        # remove the entire first corrupt volume by removing 60 slices
+        dicom_one_basename = os.path.basename(dicom_one)
+        for i in range(60):
+            dicom_num = str( (i * num_temporal_positions) + 1 ).zfill(6)
+            dicom_basename = dicom_one_basename.replace('000001', dicom_num)
+            os.remove(os.path.join(func_run, dicom_basename))
+
+        return True
 
 
 def retrieve_task_events(input_root, output_root):
@@ -141,7 +193,19 @@ def main():
     else:
         output_dir = f'{args.output_dir}/{pipeline_suffix}'
 
+    # assign the cleanup directory
     cleanup_dir = args.output_dir
+
+    # set the number of parallel commands to use for all three
+    if args.n_all > 1:
+        warning(f'Using parallel setting of {args.n_all} for all stages')
+        n_download = args.n_all
+        n_unpack = args.n_all
+        n_convert = args.n_all
+    else:
+        n_download = args.n_download
+        n_unpack = args.n_unpack
+        n_convert = args.n_convert
 
     # initialize the inputs
     dcm2bids_config_json = str(args.input_dcm2bids_config)
@@ -163,7 +227,7 @@ def main():
         # download the TGZ files
         downloadcmd = Node(
             CommandLine('downloadcmd',
-                args=f'-dp {args.package_id} -t {str(args.input_s3_links)} -d {output_tgz_root} --workerThreads {args.n_download}'),
+                args=f'-dp {args.package_id} -t {str(args.input_s3_links)} -d {output_tgz_root} --workerThreads {n_download}'),
             name='downloadcmd')
 
         ### Create the NDA TGZ downloading workflow ###
@@ -183,7 +247,7 @@ def main():
 
         # Run the download workflow
         download_wf.write_graph("download.dot")
-        download_results = download_wf.run(plugin='MultiProc', plugin_args={'n_procs' : args.n_download})
+        download_results = download_wf.run()
         debug(download_results)
 
     # decide whether or not to continue with the unpacking
@@ -240,7 +304,7 @@ def main():
 
         # Run the unpacking workflow
         unpack_wf.write_graph("unpack.dot")
-        unpack_results = unpack_wf.run(plugin='MultiProc', plugin_args={'n_procs' : args.n_unpack})
+        unpack_results = unpack_wf.run(plugin='MultiProc', plugin_args={'n_procs' : n_unpack})
         debug(unpack_results)
 
 
@@ -267,6 +331,62 @@ def main():
 
         collect_dicom_sessions.inputs.pattern = f'{output_dicom_root}/sub-*/ses-*'
         collect_dicom_sessions.inputs.mode = 'directories'
+
+        # as long as the workaround is not disabled, remove the corrupt volumes
+        if not args.disable_workaround:
+            # collect all func DICOM 1's
+            collect_func_dcms = Node(
+                Function(
+                    function=collect_glob,
+                    input_names=['pattern', 'mode'],
+                    output_names=['output_list']
+                ),
+                name='collect_func_dcms')
+
+            collect_func_dcms.inputs.pattern = f'{output_dicom_root}/sub-*/ses-*/func/*/*_dicom000001.dcm'
+            collect_func_dcms.inputs.mode = 'files'
+
+            # check for corrupt volumes
+            check_corrupt_volumes = MapNode(
+                Function(
+                    function=corrupt_volume_check,
+                    input_names=['func_dcm'],
+                    output_names=['func_run']
+                ),
+                iterfield=['func_dcm'],
+                name='check_corrupt_volumes')
+
+            # remove any found corrupt volumes
+            remove_corrupt_volume = MapNode(
+                Function(
+                    function=corrupt_volume_removal,
+                    input_names=['func_run'],
+                    output_names=['is_corrected']
+                ),
+                iterfield=['func_run'],
+                name='remove_corrupt_volume')
+
+            # define workaround workflow
+            workaround_wf = Workflow(
+                name="workaround",
+                base_dir=pipeline_base_dir,
+            )
+
+            workaround_wf.add_nodes([
+                collect_func_dcms,
+                check_corrupt_volumes,
+                remove_corrupt_volume
+            ])
+
+            workaround_wf.connect([
+                (collect_func_dcms, check_corrupt_volumes, [('output_list', 'func_dcm')]),
+                (check_corrupt_volumes, remove_corrupt_volume, [('func_run', 'func_run')])
+            ])
+
+            # Run the workaround workflow
+            workaround_wf.write_graph("workaround.dot")
+            workaround_results = workaround_wf.run(plugin='MultiProc', plugin_args={'n_procs' : n_convert})
+            debug(workaround_results)
 
         # setup for the DICOM to BIDS conversion
         format_args = MapNode(
@@ -308,7 +428,7 @@ def main():
 
         # Run the conversion workflow
         convert_wf.write_graph("convert.dot")
-        convert_results = convert_wf.run(plugin='MultiProc', plugin_args={'n_procs' : args.n_convert})
+        convert_results = convert_wf.run(plugin='MultiProc', plugin_args={'n_procs' : n_convert})
         debug(convert_results)
 
 

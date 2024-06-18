@@ -32,7 +32,7 @@ import re
 from copy import deepcopy
 from logging import debug, info, warning, error, critical
 from pathlib import Path
-from utilities import readable, available
+from utilities import readable, writable
 
 
 # constants
@@ -301,7 +301,7 @@ def cli():
                         help="The NDA-formatted abcd_fastqc01.txt as-provided "
                             "from the NDA.")
 
-    parser.add_argument(dest='output_dir', metavar='OUTPUT_DIR', type=available,
+    parser.add_argument(dest='output_dir', metavar='OUTPUT_DIR', type=writable,
                         help="The output folder for the S3 links file and "
                             "subset abcd_fastqc01.txt file.")
 

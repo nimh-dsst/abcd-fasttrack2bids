@@ -88,6 +88,13 @@ Each numbered part of this list is one tool, which can be used independently. I 
 
 ### `fasttrack2s3.py`
 
+1. Filter by default all series (except quality assurance series) from the `~/abcd_fastqc01.txt` file only including the participant-sessions in `~/sessions.csv`, then output the filtered `abcd_fastqc01.txt` files and S3 links to the `~/abcdfasttrack` output directory as separate files per participant-session (thanks to the `-sep` option).
+
+    ```bash
+    cd ~/abcd-fasttrack2bids
+    poetry run python fasttrack2s3.py -csv ~/sessions.csv -sep ~/abcd_fastqc01.txt ~/abcdfasttrack
+    ```
+
 ### `pipeline.py`
 
 1. Preserving the LOGS files and BIDS data while using 12 download worker threads, 20 concurrent TGZ unpackings, and 25 MRI sessions going through dcm2bids concurrently. This also uses the `dcm2bids_v3_config.json` configuration file, the NDA package 1234567, the `~/abcd_fastqc01_all_p-20_s-25_s3links.txt` S3 links file, and outputting to the `~/all_p-20_s-25` directory.

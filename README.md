@@ -97,11 +97,11 @@ Each numbered part of this list is one tool, which can be used independently. I 
 
 ### `pipeline.py`
 
-1. Preserving the LOGS files and BIDS data while using 12 download worker threads, 20 concurrent TGZ unpackings, and 25 MRI sessions going through dcm2bids concurrently. This also uses the `dcm2bids_v3_config.json` configuration file, the NDA package 1234567, the `~/abcd_fastqc01_all_p-20_s-25_s3links.txt` S3 links file, and outputting to the `~/all_p-20_s-25` directory.
+1. Preserving the LOGS files and BIDS data while using 12 download worker threads, 20 concurrent TGZ unpackings, and 25 MRI sessions going through dcm2bids concurrently. This also uses the `dcm2bids_v3_config.json` configuration file, the NDA package 1234567, the `~/abcd_fastqc01_all_p-20_s-25_s3links.txt` S3 links file, a temporary directory of `/scratch/abcd`, and outputs at the end to the `~/all_p-20_s-25` directory.
 
     ```bash
     cd ~/abcd-fasttrack2bids
-    poetry run python pipeline.py -p 1234567 -s ~/abcd_fastqc01_all_p-20_s-25_s3links.txt -c dcm2bids_v3_config.json -o ~/all_p-20_s-25 -z LOGS BIDS --n-download 12 --n-unpack 20 --n-convert 25
+    poetry run python pipeline.py -p 1234567 -s ~/abcd_fastqc01_all_p-20_s-25_s3links.txt -c dcm2bids_v3_config.json -t /scratch/abcd -o ~/all_p-20_s-25 -z LOGS BIDS --n-download 12 --n-unpack 20 --n-convert 25
     ```
 
 1. Download the TGZs and unpack them for the DICOMs while only saving the logs and DICOM files. This uses the NDA package 1234567, the `~/sub-NDARINVANONYMIZED_ses-2YearFollowUpYArm1_s3links.txt` S3 links file, the `dcm2bids_v3_config.json` Dcm2Bids configuration file, and outputs to the `~/all_p-1_s-1` directory. This also runs all steps with 5 concurrent parallel commands.

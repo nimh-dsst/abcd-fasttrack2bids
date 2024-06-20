@@ -327,25 +327,7 @@
             "suffix": "epi",
             "custom_entities": "acq-func_dir-AP",
             "criteria": {
-                "SeriesDescription": "ABCD-fMRI-FM_GE_original_*",
-                "PhaseEncodingPolarityGE": "Flipped"
-            }
-        },
-        {
-            "datatype": "fmap",
-            "suffix": "epi",
-            "custom_entities": "acq-func_dir-AP",
-            "criteria": {
                 "SeriesDescription": "ABCD-fMRI-FM,*",
-                "PhaseEncodingPolarityGE": "Flipped"
-            }
-        },
-        {
-            "datatype": "fmap",
-            "suffix": "epi",
-            "custom_entities": "acq-func_dir-PA",
-            "criteria": {
-                "SeriesDescription": "ABCD-fMRI-FM_GE_original_*",
                 "PhaseEncodingPolarityGE": "Unflipped"
             }
         },
@@ -355,7 +337,7 @@
             "custom_entities": "acq-func_dir-PA",
             "criteria": {
                 "SeriesDescription": "ABCD-fMRI-FM,*",
-                "PhaseEncodingPolarityGE": "Unflipped"
+                "PhaseEncodingPolarityGE": "Flipped"
             }
         }
     ]

@@ -97,6 +97,7 @@ FILL IN THE BLANK.
 
 - [x] ~~Fix the event file copies to the `sourcedata` directory to be numbered correctly among many subjects.~~
 - [x] ~~Implement the `--n-all` option~~
+- [ ] Compare outputs of `pipeline.py` to outputs of `abcd-dicom2bids`.
 - [ ] Log when the dcm2niix workaround gets used and a corrupt volume is removed from any DICOM series as `sub-*/ses-*/func/sub-*_ses-*_*_bold.warning.txt`.
 - [ ] Don't halt the whole pipeline if a single session fails to convert.
 - [ ] Don't halt the whole pipeline if a single session's single series fails to convert.

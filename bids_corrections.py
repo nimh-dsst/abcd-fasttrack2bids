@@ -18,7 +18,7 @@ from pathlib import Path
 from utilities import readable, writable, available
 
 # default logging basic configuration
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # get the path to here
 HERE = Path(__file__).parent.resolve()
@@ -92,9 +92,10 @@ def cli():
                             'func JSON sidecar metadata files, '
                             'as recommended by DCAN-Labs/abcd-dicom2bids.')
 
-    parser.add_argument('--DCAN', action='store_true', required=False,
+    parser.add_argument('--DCAN', nargs=1, default=None, required=False,
+                        metavar='MRE_DIR',
                         help='Run all of the DCAN-Labs/abcd-dicom2bids recommendations. '
-                            'WARNING: Requires FSL and MATLAB Runtime Environment as dependencies.')
+                            'WARNING: Requires FSL and MATLAB Runtime Environment 9.1 as dependencies.')
 
     return parser.parse_args()
 
@@ -168,9 +169,15 @@ def separate_fmaps(layout, subsess, args):
 
 
 def assign_funcfmapIntendedFor(layout, subsess, args):
-    layout = separate_fmaps(layout, subsess, args)
-
     fsl_dir = fsl_check()
+    if args.DCAN != None:
+        MRE_DIR = args.DCAN[0]
+    elif args.funcfmapIntendedFor != None:
+        MRE_DIR = args.funcfmapIntendedFor[0]
+    else:
+        raise Exception("No MRE_DIR provided for func fmap IntendedFor assignment.")
+
+    debug(MRE_DIR)
 
     for subject, sessions in subsess:
 
@@ -180,7 +187,7 @@ def assign_funcfmapIntendedFor(layout, subsess, args):
         if fmaps:
             info(f"Running SEFM select for {subject}, {sessions}")
             base_temp_dir = fmaps[0].dirname
-            best_pos, best_neg = sefm_select(layout, subject, sessions, base_temp_dir, fsl_dir, args.funcfmapIntendedFor[0], debug=False)
+            best_pos, best_neg = sefm_select(layout, subject, sessions, base_temp_dir, fsl_dir, MRE_DIR, debug=False)
 
     return BIDSLayout(args.bids)
 
@@ -198,8 +205,9 @@ def assign_dwifmapIntendedFor(layout, subsess, args):
                 dwi_relpath += [os.path.relpath(dwi_nifti, str(args.bids))]
 
             # pick the first AP fmap to assign to all dwi scans
-            AP = sorted(APs)[0]
-            AP_json = os.path.join(AP.dirname, AP.filename)
+            sorted_APs = sorted([os.path.join(AP.dirname, AP.filename) for AP in APs])
+            debug(sorted_APs)
+            AP_json = sorted_APs[0]
             insert_edit_json(AP_json, 'IntendedFor', dwi_relpath)
 
     return BIDSLayout(args.bids)
@@ -379,64 +387,68 @@ def main():
 
     # Load the bids layout
     layout = BIDSLayout(args.bids)
-    subsess = read_bids_layout(layout, subject_list=layout.get_subjects(), collect_on_subject=True)
+    subsess = read_bids_layout(layout, subject_list=layout.get_subjects(), collect_on_subject=False)
+    debug(subsess)
 
     # check if the DCAN argument was provided
-    if args.DCAN:
+    if args.DCAN != None:
         info("Running all DCAN-Labs/abcd-dicom2bids recommendations")
 
     # check if the old GE DV25 through DV28 argument was provided
-    if args.dwiCorrectOldGE or args.DCAN:
+    if args.dwiCorrectOldGE or args.DCAN != None:
         info("Correcting old GE DV25 through DV28 DWI BVAL and BVEC files")
         layout = correct_old_GE_DV25_DV28(layout, subsess, args)
 
-    # check if the concatenated field maps separation argument was passed
-    if args.fmapSeparate or args.DCAN:
-        info("Separating concatenated field maps")
-        layout = separate_fmaps(layout, subsess, args)
-
     # check if the acq-dwi fmap IntendedFor argument was provided
-    if args.dwifmapIntendedFor or args.DCAN:
+    if args.dwifmapIntendedFor or args.DCAN != None:
         info("Assigning dwi fmap IntendedFor field")
         layout = assign_dwifmapIntendedFor(layout, subsess, args)
 
     # check if the acq-func fmap IntendedFor argument was provided
-    if args.funcfmapIntendedFor != None or args.DCAN:
+    # if so, also run the fmapSeparate option
+    if args.funcfmapIntendedFor != None or args.DCAN != None:
+        info("Separating concatenated field maps")
+        layout = separate_fmaps(layout, subsess, args)
+
         info("Assigning func fmap IntendedFor fields")
         layout = assign_funcfmapIntendedFor(layout, subsess, args)
+    # if not and the fmapSeparate option was passed without the funcfmapIntendedFor
+    elif args.funcfmapIntendedFor == None and args.fmapSeparate:
+        info("Separating concatenated field maps")
+        layout = separate_fmaps(layout, subsess, args)
 
     # check if the anat DwellTime argument was provided
-    if args.anatDwellTime or args.DCAN:
+    if args.anatDwellTime or args.DCAN != None:
         info("Injecting anat DwellTime fields")
         layout = inject_anatDwellTime(layout, subsess, args)
 
     # check if the dwi fmap TotalReadoutTime argument was provided
-    if args.dwiTotalReadoutTime or args.DCAN:
+    if args.dwiTotalReadoutTime or args.DCAN != None:
         info("Injecting dwi and dwi fmap TotalReadoutTime fields")
         layout = inject_dwiTotalReadoutTime(layout, subsess, args)
 
     # check if the dwi fmap EffectiveEchoSpacing argument was provided
-    if args.dwiEffectiveEchoSpacing or args.DCAN:
+    if args.dwiEffectiveEchoSpacing or args.DCAN != None:
         info("Injecting dwi and dwi fmap EffectiveEchoSpacing fields")
         layout = inject_dwiEffectiveEchoSpacing(layout, subsess, args)
 
     # check if the func fmap EffectiveEchoSpacing argument was provided
-    if args.funcfmapEffectiveEchoSpacing or args.DCAN:
+    if args.funcfmapEffectiveEchoSpacing or args.DCAN != None:
         info("Injecting func fmap EffectiveEchoSpacing fields")
         layout = inject_funcfmapEffectiveEchoSpacing(layout, subsess, args)
 
     # check if the func EffectiveEchoSpacing argument was provided
-    if args.funcEffectiveEchoSpacing or args.DCAN:
+    if args.funcEffectiveEchoSpacing or args.DCAN != None:
         info("Injecting func EffectiveEchoSpacing fields")
         layout = inject_funcEffectiveEchoSpacing(layout, subsess, args)
 
     # check if the dwi fmap PhaseEncodingDirection argument was provided
-    if args.dwifmapPhaseEncodingDirection or args.DCAN:
+    if args.dwifmapPhaseEncodingDirection or args.DCAN != None:
         info("Injecting dwi fmap PhaseEncodingDirection fields")
         layout = inject_dwifmapPhaseEncodingDirection(layout, subsess, args)
 
     # check if the PhaseEncoding argument was provided
-    if args.funcPhaseEncoding or args.DCAN:
+    if args.funcPhaseEncoding or args.DCAN != None:
         info("Adding PhaseEncodingAxis and Direction fields")
         layout = add_PhaseEncodingAxisAndDirection(layout, subsess, args)
 

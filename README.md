@@ -84,6 +84,13 @@ FILL IN THE BLANK.
 
 ### `bids_corrections.py`
 
+1. Correct the BIDS dataset using the "DCAN Labs corrections" at `~/all_p-20_s-25/rawdata` using the temporary directory of `/scratch/abcd`, logging to `~/all_p-20_s-25/code/logs`, and using the the MCR v9.1 (MATLAB R2016b compiler runtime environment) directory at `~/MCR/v91`.
+
+    ```bash
+    cd ~/abcd-fasttrack2bids
+    poetry run python bids_corrections.py -b ~/all_p-20_s-25/rawdata -t /scratch/abcd -l ~/all_p-20_s-25/code/logs --DCAN ~/MCR/v91
+    ```
+
 ## To Do
 
 ### `fasttrack2s3.py` - Fast Track Filter
@@ -98,7 +105,7 @@ FILL IN THE BLANK.
 - [x] ~~Fix the event file copies to the `sourcedata` directory to be numbered correctly among many subjects.~~
 - [x] ~~Implement the `--n-all` option~~
 - [ ] Compare outputs of `pipeline.py` to outputs of `abcd-dicom2bids`.
-- [ ] Log when the dcm2niix workaround gets used and a corrupt volume is removed from any DICOM series as `sub-*/ses-*/func/sub-*_ses-*_*_bold.warning.txt`.
+- [ ] Log when the dcm2niix workaround gets used and a corrupt volume is removed from any DICOM series as `sub-*/ses-*/func/sub-*_ses-*_*_bold_warning.txt`.
 - [ ] Don't halt the whole pipeline if a single session fails to convert.
 - [ ] Don't halt the whole pipeline if a single session's single series fails to convert.
 - [ ] Make the script take as input either a single `s3links.txt` file, or a directory of them (to prepare for swarm submission).
@@ -107,27 +114,16 @@ FILL IN THE BLANK.
 ### `bids_corrections.py` - Automated BIDS Corrections
 
 - [ ] Add a flag to optionally run bids-validator on the output BIDS directory.
+- [ ] Make the script agnostic to whether it is started in the BIDS root directory (containing `code/`, `rawdata/`, and `sourcedata/`) or the `rawdata/` directory.
 
 ### `README.md` - This file
 
 - [ ] Improve this `README.md` with a walkthrough of preparing the two NDA packages necessary for using this.
 
-### Testing
-
-- [ ] Test `pipeline.py` on a mixed set of sessions, including some same-participant-different-sessions.
-- [ ] Test `pipeline.py` stops before executing the convert workflow if BIDS is not provided in the `--preserve` option.
-- [ ] Test `pipeline.py` stops before executing the unpack workflow if both BIDS and TGZ are not provided in the `--preserve` option.
-
 ## Original Operating Procedure Proposal
 
-Each numbered part of this list is one tool, which can be used independently. I will build a common usage pipeline out of it.
+- [ ] Build a common usage pipeline out of the three stages.
 
-1. ~~`fasttrack2s3.py`: Filter down the `abcd_fastqc01.txt` file based on user selection of data types, participants, and sessions, then output an `s3_links.txt`.~~
-1. ~~NDA Tools' `downloadcmd` on all the links in `s3_links.txt`, output to a single directory. Or maybe just use `downloadcmd` as-is?~~
-1. ~~ABCD DICOM TGZ unpack.~~
-1. ~~Dcm2Bids (v3) across all available unpacked DICOMs.~~
-1. ~~Grab unpacked event timing files and put them in the BIDS `sourcedata` directory.~~
-1. ~~(optional) Automated sidecar JSON corrections for "EffectiveEchoSpacing".~~
 1. (stretch goal) Ingest BIDS sidecar metadata from the DAIRC present in the unpacked TGZs
 
 ## Improvement Ideas

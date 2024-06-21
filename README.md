@@ -91,45 +91,6 @@ FILL IN THE BLANK.
     poetry run python bids_corrections.py -b ~/all_p-20_s-25/rawdata -t /scratch/abcd -l ~/all_p-20_s-25/code/logs --DCAN ~/MCR/v91
     ```
 
-## To Do
-
-### `fasttrack2s3.py` - Fast Track Filter
-
-- [ ] **Make "special" inclusions and exclusions, like "Replaced" or ftq_complete==1, easier to do.**
-- [ ] Add flag to grab `--only-new` given a DSST ABCD fast-track `scans.tsv` file.
-- [ ] Add additonal option to save out logs to a specific file.
-- [ ] Add levels of log messages of warning/caution for the user to know what's going on with datatypes specifically.
-
-### `pipeline.py` - Download --> Unpack --> Convert Pipeline
-
-- [x] ~~Fix the event file copies to the `sourcedata` directory to be numbered correctly among many subjects.~~
-- [x] ~~Implement the `--n-all` option~~
-- [ ] Compare outputs of `pipeline.py` to outputs of `abcd-dicom2bids`.
-- [ ] Log when the dcm2niix workaround gets used and a corrupt volume is removed from any DICOM series as `sub-*/ses-*/func/sub-*_ses-*_*_bold_warning.txt`.
-- [ ] Don't halt the whole pipeline if a single session fails to convert.
-- [ ] Don't halt the whole pipeline if a single session's single series fails to convert.
-- [ ] Make the script take as input either a single `s3links.txt` file, or a directory of them (to prepare for swarm submission).
-- [ ] Add a flag to optionally run bids-validator on the output BIDS directory.
-
-### `bids_corrections.py` - Automated BIDS Corrections
-
-- [ ] Add a flag to optionally run bids-validator on the output BIDS directory.
-- [ ] Make the script agnostic to whether it is started in the BIDS root directory (containing `code/`, `rawdata/`, and `sourcedata/`) or the `rawdata/` directory.
-
-### `README.md` - This file
-
-- [ ] Improve this `README.md` with a walkthrough of preparing the two NDA packages necessary for using this.
-
-## Original Operating Procedure Proposal
-
-- [ ] Build a common usage pipeline out of the three stages.
-
-1. (stretch goal) Ingest BIDS sidecar metadata from the DAIRC present in the unpacked TGZs
-
-## Improvement Ideas
-
-- Perhaps add arguments to a top-level wrapper, `fasttrack2bids.py`, to allow for controlling the overall workflow with some sane defaults and running options.
-
 ## Acknowledgements
 
 Thanks to [`DCAN-Labs/abcd-dicom2bids`](https://github.com/DCAN-Labs/abcd-dicom2bids) for:

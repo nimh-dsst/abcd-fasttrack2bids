@@ -389,16 +389,17 @@ def main():
     # 1. Parse command line arguments
     args = cli()
 
+    # Set up logging
     if args.log_level == 'DEBUG':
-        logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
+        logging.basicConfig(format=LOG_FORMAT, level=logging.DEBUG)
     elif args.log_level == 'INFO':
-        logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
+        logging.basicConfig(format=LOG_FORMAT, level=logging.INFO)
     elif args.log_level == 'WARNING':
-        logging.basicConfig(level=logging.WARNING, format=LOG_FORMAT)
+        logging.basicConfig(format=LOG_FORMAT, level=logging.WARNING)
     elif args.log_level == 'ERROR':
-        logging.basicConfig(level=logging.ERROR, format=LOG_FORMAT)
+        logging.basicConfig(format=LOG_FORMAT, level=logging.ERROR)
     elif args.log_level == 'CRITICAL':
-        logging.basicConfig(level=logging.CRITICAL, format=LOG_FORMAT)
+        logging.basicConfig(format=LOG_FORMAT, level=logging.CRITICAL)
     else:
         raise ValueError(f"Invalid log level: {args.log_level}")
 

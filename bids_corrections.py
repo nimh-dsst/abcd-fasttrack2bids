@@ -17,12 +17,17 @@ from logging import debug, info, warning, error, critical
 from pathlib import Path
 from utilities import readable, writable, available
 
-# default logging basic configuration
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
-
 # get the path to here
 HERE = Path(__file__).parent.resolve()
 dwi_tables = HERE / 'dependencies' / 'ABCD_Release_2.0_Diffusion_Tables'
+
+# Set up logging
+LOG_FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
+LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
+
+# create help strings for the log level option
+log_levels_str = "\n    ".join(LOG_LEVELS)
+
 
 def cli():
     parser = argparse.ArgumentParser(description='Correct BIDS data')
@@ -32,10 +37,13 @@ def cli():
                         help='Path to the BIDS input directory')
     parser.add_argument('-t', '--temporary', type=available, required=True,
                         help='Path to the temporary directory for intermediary files')
-    parser.add_argument('-l', '--logs', type=available, required=True,
-                        help='Directory path in which to put log files')
 
     # optional arguments
+    parser.add_argument('-l', '--log-level', metavar='LEVEL',
+                        choices=LOG_LEVELS, default='INFO',
+                        help="Set the minimum logging level. Defaults to INFO.\n"
+                            "Options, in most to least verbose order, are:\n"
+                            f"    {log_levels_str}")
     parser.add_argument('--dwiCorrectOldGE', action='store_true', required=False,
                         help='Correct any present "old" GE DV25 through DV28 '
                             'DWI BVAL and BVEC files.')
@@ -186,7 +194,8 @@ def assign_funcfmapIntendedFor(layout, subsess, args):
 
         if fmaps:
             info(f"Running SEFM select for {subject}, {sessions}")
-            base_temp_dir = fmaps[0].dirname
+            # base_temp_dir = fmaps[0].dirname
+            base_temp_dir = args.temporary
             best_pos, best_neg = sefm_select(layout, subject, sessions, base_temp_dir, fsl_dir, MRE_DIR, debug=False)
 
     return BIDSLayout(args.bids)
@@ -383,7 +392,22 @@ def add_PhaseEncodingAxisAndDirection(layout, subsess, args):
 
 
 def main():
+    # Parse the command line
     args = cli()
+
+    # Set up logging
+    if args.log_level == 'DEBUG':
+        logging.basicConfig(format=LOG_FORMAT, level=logging.DEBUG)
+    elif args.log_level == 'INFO':
+        logging.basicConfig(format=LOG_FORMAT, level=logging.INFO)
+    elif args.log_level == 'WARNING':
+        logging.basicConfig(format=LOG_FORMAT, level=logging.WARNING)
+    elif args.log_level == 'ERROR':
+        logging.basicConfig(format=LOG_FORMAT, level=logging.ERROR)
+    elif args.log_level == 'CRITICAL':
+        logging.basicConfig(format=LOG_FORMAT, level=logging.CRITICAL)
+    else:
+        raise ValueError(f"Invalid log level: {args.log_level}")
 
     # Load the bids layout
     layout = BIDSLayout(args.bids)

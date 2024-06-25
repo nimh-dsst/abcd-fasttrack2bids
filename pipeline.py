@@ -1,10 +1,9 @@
 #! /usr/bin/env python3
 
 import argparse
-import os
-import pydicom
+import logging
 
-from logging import debug, info, warning, error, basicConfig
+from logging import debug, info, warning, error, critical
 from nipype import Workflow
 from nipype import Node
 from nipype import MapNode
@@ -13,7 +12,11 @@ from nipype.interfaces.base import CommandLine
 from utilities import readable, available, writable
 
 # Set up logging
-basicConfig(level='INFO')
+LOG_FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
+LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
+
+# create help string for the log level option
+log_levels_str = "\n    ".join(LOG_LEVELS)
 
 
 def cli():
@@ -40,6 +43,11 @@ def cli():
                         help='The number of tar xzf commands to run in parallel')
     parser.add_argument('--n-convert', type=int, default=1,
                         help='The number of dcm2bids conversion commands to run in parallel')
+    parser.add_argument('-l', '--log-level', metavar='LEVEL',
+                        choices=LOG_LEVELS, default='INFO',
+                        help="Set the minimum logging level. Defaults to INFO.\n"
+                            "Options, in most to least verbose order, are:\n"
+                            f"    {log_levels_str}")
     parser.add_argument('-d', '--disable-workaround', action='store_true',
                         help='By default (when present), a "corrupt volume" in any func run '
                             'DICOM series [where the first DICOM contains "=RawDataStorage" '
@@ -185,6 +193,22 @@ def retrieve_task_events(input_root, output_root):
 def main():
     # Parse the command line arguments
     args = cli()
+
+    # Set up logging
+    if args.log_level == 'DEBUG':
+        logging.basicConfig(format=LOG_FORMAT, level=logging.DEBUG)
+    elif args.log_level == 'INFO':
+        logging.basicConfig(format=LOG_FORMAT, level=logging.INFO)
+    elif args.log_level == 'WARNING':
+        logging.basicConfig(format=LOG_FORMAT, level=logging.WARNING)
+    elif args.log_level == 'ERROR':
+        logging.basicConfig(format=LOG_FORMAT, level=logging.ERROR)
+    elif args.log_level == 'CRITICAL':
+        logging.basicConfig(format=LOG_FORMAT, level=logging.CRITICAL)
+    else:
+        raise ValueError(f"Invalid log level: {args.log_level}")
+
+    # set the pipeline suffix from the input S3 links file
     pipeline_suffix = str(args.input_s3_links.stem.replace("_s3links", ""))
 
     # check if the temporary directory is provided

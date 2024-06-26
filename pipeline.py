@@ -29,7 +29,7 @@ def cli():
                         help='The path to the S3 links TXT file')
     parser.add_argument('-c', '--input-dcm2bids-config', type=readable, required=True,
                         help='The path to the Dcm2Bids config JSON file')
-    parser.add_argument('-o', '--output-dir', type=available, required=True,
+    parser.add_argument('-o', '--output-dir', type=writable, required=True,
                         help='The output directory')
     parser.add_argument('-t', '--temporary-dir', type=writable,
                         help='The temporary intermediary files directory')

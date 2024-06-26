@@ -13,13 +13,13 @@ import argparse
 import configparser
 import logging
 
-from logging import debug, info, warning, error
+from logging import debug, info, warning, error, critical
 from nipype import Workflow
 from nipype import Node
 from nipype import MapNode
 from nipype import Function
 from nipype.interfaces.base import CommandLine
-from pipeline import collect_glob
+# from pipeline import collect_glob
 from pathlib import Path
 from utilities import readable, writable, available
 
@@ -121,10 +121,11 @@ def main():
     config = read_config(args.config)
 
     filtered_s3links_folder = args.temporary_dir / 'filtered_abcd_fastqc01'
+    filtered_s3links_folder.mkdir(parents=True, exist_ok=False)
 
     # begin the nipype interfaces to call the three workflows as one big workflow
     fasttrack2s3 = Node(
-        CommandLine(f'poetry run --directory={HERE} fasttrack2s3.py',
+        CommandLine(f'poetry run --directory {HERE} python {HERE}/fasttrack2s3.py',
                     args=f'-csv {args.sessions_csv} {args.abcd_fastqc01} {filtered_s3links_folder} {config['fasttrack2s3']['args']}'),
         name='1_fasttrack2s3'
     )
@@ -149,7 +150,7 @@ def main():
 
     # pipeline MapNode
     pipeline = MapNode(
-        CommandLine(f'poetry run --directory={HERE} pipeline.py'),
+        CommandLine(f'poetry run --directory {HERE} python {HERE}/pipeline.py'),
         iterfield=['args'],
         name='3_pipeline'
     )
@@ -171,7 +172,7 @@ def main():
 
     # bids_corrections Node
     bids_corrections = Node(
-        CommandLine(f'poetry run --directory={HERE} bids_corrections.py',
+        CommandLine(f'poetry run --directory {HERE} python {HERE}/bids_corrections.py',
                     args=f'-b {args.temporary_dir}/rawdata -l {args.temporary_dir}/code/logs -t {args.temporary_dir} {config['bids_corrections']['args']}'),
         name='5_bids_corrections'
     )

@@ -1,0 +1,6 @@
+#SWARM --threads-per-process 2
+#SWARM --gb-per-process 4
+#SWARM --time 45
+#SWARM --gres lscratch:25
+#SWARM --partition quick
+#SWARM --module python,fsl

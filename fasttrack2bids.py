@@ -126,7 +126,7 @@ def main():
     # begin the nipype interfaces to call the three workflows as one big workflow
     fasttrack2s3 = Node(
         CommandLine(f'poetry run --directory {HERE} python {HERE}/fasttrack2s3.py',
-                    args=f'-csv {args.sessions_csv} {args.abcd_fastqc01} {filtered_s3links_folder} {config['fasttrack2s3']['args']}'),
+                    args=f'-csv {args.sessions_csv} {args.abcd_fastqc01} {filtered_s3links_folder} {config['fasttrack2s3']['options']}'),
         name='1_fasttrack2s3'
     )
 
@@ -173,7 +173,7 @@ def main():
     # bids_corrections Node
     bids_corrections = Node(
         CommandLine(f'poetry run --directory {HERE} python {HERE}/bids_corrections.py',
-                    args=f'-b {args.temporary_dir}/rawdata -l {args.temporary_dir}/code/logs -t {args.temporary_dir} {config['bids_corrections']['args']}'),
+                    args=f'-b {args.temporary_dir}/rawdata -l {args.temporary_dir}/code/logs -t {args.temporary_dir} {config['bids_corrections']['options']}'),
         name='5_bids_corrections'
     )
 

@@ -6,6 +6,7 @@
 import argparse
 import logging
 import os
+import pandas
 import shutil
 
 from bids import BIDSLayout
@@ -20,6 +21,7 @@ from utilities import readable, writable, available
 # get the path to here
 HERE = Path(__file__).parent.resolve()
 dwi_tables = HERE / 'dependencies' / 'ABCD_Release_2.0_Diffusion_Tables'
+ds_desc = HERE / 'dataset_description.json'
 
 # Set up logging
 LOG_FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
@@ -35,7 +37,7 @@ def cli():
     # very necessary arguments
     parser.add_argument('-b', '--bids', type=writable, required=True,
                         help='Path to the BIDS input directory')
-    parser.add_argument('-t', '--temporary', type=available, required=True,
+    parser.add_argument('-t', '--temporary', type=writable, required=True,
                         help='Path to the temporary directory for intermediary files')
 
     # optional arguments
@@ -122,7 +124,13 @@ def fsl_check():
 
     return fsl_dir
 
-def correct_old_GE_DV25_DV28(layout, subsess, args):
+
+def df_append(df, data):
+    df = pandas.concat([df, pandas.DataFrame(data, index=[0])], ignore_index=True)
+    return df
+
+
+def correct_old_GE_DV25_DV28(layout, subsess, args, df):
     for subject, sessions in subsess:
 
         # Check if there are any old GE DV25 through DV28 DWI BVAL and BVEC files
@@ -141,17 +149,33 @@ def correct_old_GE_DV25_DV28(layout, subsess, args):
                             info(f'Overwriting the bval and bvec files for GE {version}: {dwi_nifti}')
                             if version == 'DV25':
                                 shutil.copyfile(dwi_tables.joinpath('GE_bvals_DV25.txt'), dwi_bval)
+                                df = df_append(df, {
+                                    'time': pandas.Timestamp.now(),
+                                    'function': 'correct_old_GE_DV25_DV28',
+                                    'file': dwi_bval,
+                                    'field': 'n/a',
+                                    'original_value': 'n/a',
+                                    'corrected_value': dwi_tables.joinpath('GE_bvals_DV25.txt')
+                                })
                                 shutil.copyfile(dwi_tables.joinpath('GE_bvecs_DV25.txt'), dwi_bvec)
+                                df = df_append(df, {
+                                    'time': pandas.Timestamp.now(),
+                                    'function': 'correct_old_GE_DV25_DV28',
+                                    'file': dwi_bvec,
+                                    'field': 'n/a',
+                                    'original_value': 'n/a',
+                                    'corrected_value': dwi_tables.joinpath('GE_bvecs_DV25.txt')
+                                })
                             else:
                                 shutil.copyfile(dwi_tables.joinpath('GE_bvals_DV26.txt'), dwi_bval)
                                 shutil.copyfile(dwi_tables.joinpath('GE_bvecs_DV26.txt'), dwi_bvec)
 
-    return BIDSLayout(args.bids)
+    return BIDSLayout(args.bids), df
 
 
 # Most of the following functions are based on the sefm_eval_and_json_editor.py main function
 
-def separate_fmaps(layout, subsess, args):
+def separate_fmaps(layout, subsess, args, df):
     fsl_dir = fsl_check()
 
     for subject, sessions in subsess:
@@ -173,10 +197,10 @@ def separate_fmaps(layout, subsess, args):
             # recreate layout with the additional fmaps
             layout = BIDSLayout(args.bids)
 
-    return layout
+    return layout, df
 
 
-def assign_funcfmapIntendedFor(layout, subsess, args):
+def assign_funcfmapIntendedFor(layout, subsess, args, df):
     fsl_dir = fsl_check()
     if args.DCAN != None:
         MRE_DIR = args.DCAN[0]
@@ -198,10 +222,10 @@ def assign_funcfmapIntendedFor(layout, subsess, args):
             base_temp_dir = args.temporary
             best_pos, best_neg = sefm_select(layout, subject, sessions, base_temp_dir, fsl_dir, MRE_DIR, debug=False)
 
-    return BIDSLayout(args.bids)
+    return BIDSLayout(args.bids), df
 
 
-def assign_dwifmapIntendedFor(layout, subsess, args):
+def assign_dwifmapIntendedFor(layout, subsess, args, df):
     for subject, sessions in subsess:
 
         # grap the DWI NIfTIs and the AP dwi fmap JSON
@@ -219,10 +243,10 @@ def assign_dwifmapIntendedFor(layout, subsess, args):
             AP_json = sorted_APs[0]
             insert_edit_json(AP_json, 'IntendedFor', dwi_relpath)
 
-    return BIDSLayout(args.bids)
+    return BIDSLayout(args.bids), df
 
 
-def inject_anatDwellTime(layout, subsess, args):
+def inject_anatDwellTime(layout, subsess, args, df):
     for subject, sessions in subsess:
 
         anat = layout.get(subject=subject, session=sessions, datatype='anat', extension='.nii.gz')
@@ -239,10 +263,10 @@ def inject_anatDwellTime(layout, subsess, args):
                 if 'Siemens' in TX_metadata['Manufacturer']:
                     insert_edit_json(TX_json, 'DwellTime', 0.000510012)
 
-    return BIDSLayout(args.bids)
+    return BIDSLayout(args.bids), df
 
 
-def inject_dwiTotalReadoutTime(layout, subsess, args):
+def inject_dwiTotalReadoutTime(layout, subsess, args, df):
     for subject, sessions in subsess:
 
         dwi = layout.get(subject=subject, session=sessions, datatype='dwi', suffix='dwi', extension='.nii.gz')
@@ -268,10 +292,10 @@ def inject_dwiTotalReadoutTime(layout, subsess, args):
             if 'Siemens' in scan_metadata['Manufacturer']:
                 insert_edit_json(scan_json, 'TotalReadoutTime', 0.0959097)
 
-    return BIDSLayout(args.bids)
+    return BIDSLayout(args.bids), df
 
 
-def inject_dwiEffectiveEchoSpacing(layout, subsess, args):
+def inject_dwiEffectiveEchoSpacing(layout, subsess, args, df):
     for subject, sessions in subsess:
 
         dwi = layout.get(subject=subject, session=sessions, datatype='dwi', suffix='dwi', extension='.nii.gz')
@@ -297,10 +321,10 @@ def inject_dwiEffectiveEchoSpacing(layout, subsess, args):
             if 'Siemens' in scan_metadata['Manufacturer']:
                 insert_edit_json(scan_json, 'EffectiveEchoSpacing', 0.000689998)
 
-    return BIDSLayout(args.bids)
+    return BIDSLayout(args.bids), df
 
 
-def inject_funcfmapEffectiveEchoSpacing(layout, subsess, args):
+def inject_funcfmapEffectiveEchoSpacing(layout, subsess, args, df):
     for subject, sessions in subsess:
 
         fmap = layout.get(subject=subject, session=sessions, datatype='fmap', extension='.nii.gz', acquisition='func')
@@ -317,10 +341,10 @@ def inject_funcfmapEffectiveEchoSpacing(layout, subsess, args):
                 if 'Siemens' in fm_metadata['Manufacturer']:
                     insert_edit_json(fm_json, 'EffectiveEchoSpacing', 0.000510012)
     
-    return BIDSLayout(args.bids)
+    return BIDSLayout(args.bids), df
 
 
-def inject_funcEffectiveEchoSpacing(layout, subsess, args):
+def inject_funcEffectiveEchoSpacing(layout, subsess, args, df):
     for subject, sessions in subsess:
 
         func = layout.get(subject=subject, session=sessions, datatype='func', extension='.nii.gz')
@@ -338,10 +362,10 @@ def inject_funcEffectiveEchoSpacing(layout, subsess, args):
                 if 'Siemens' in task_metadata['Manufacturer']:
                     insert_edit_json(task_json, 'EffectiveEchoSpacing', 0.000510012)
     
-    return BIDSLayout(args.bids)
+    return BIDSLayout(args.bids), df
 
 
-def inject_dwifmapPhaseEncodingDirection(layout, subsess, args):
+def inject_dwifmapPhaseEncodingDirection(layout, subsess, args, df):
     for subject, sessions in subsess:
 
         AP = layout.get(subject=subject, session=sessions, datatype='fmap', acquisition='dwi', direction='AP', extension='.nii.gz')
@@ -368,10 +392,10 @@ def inject_dwifmapPhaseEncodingDirection(layout, subsess, args):
         #         if 'Philips' in dwi_metadata['Manufacturer']:
         #             insert_edit_json(dwi_json, 'PhaseEncodingDirection', 'j')
 
-    return BIDSLayout(args.bids)
+    return BIDSLayout(args.bids), df
 
 
-def add_PhaseEncodingAxisAndDirection(layout, subsess, args):
+def add_PhaseEncodingAxisAndDirection(layout, subsess, args, df):
     for subject, sessions in subsess:
 
         # PE direction vs axis
@@ -388,12 +412,14 @@ def add_PhaseEncodingAxisAndDirection(layout, subsess, args):
                 elif "PhaseEncodingDirection" in task_metadata:
                     insert_edit_json(task_json, 'PhaseEncodingAxis', task_metadata['PhaseEncodingDirection'].strip('-'))
 
-    return BIDSLayout(args.bids)
+    return BIDSLayout(args.bids), df
 
 
 def main():
     # Parse the command line
     args = cli()
+
+    df = pandas.DataFrame(columns=['time', 'function', 'file', 'field', 'original_value', 'corrected_value'])
 
     # Set up logging
     if args.log_level == 'DEBUG':
@@ -409,6 +435,19 @@ def main():
     else:
         raise ValueError(f"Invalid log level: {args.log_level}")
 
+    # add dataset_description.json to the BIDS directory
+    dest_ds_desc = args.bids / 'dataset_description.json'
+    if not dest_ds_desc.exists():
+        shutil.copyfile(ds_desc, dest_ds_desc)
+        df = df_append(df, {
+            'time': pandas.Timestamp.now(),
+            'function': 'main',
+            'file': dest_ds_desc,
+            'field': 'n/a',
+            'original_value': 'n/a',
+            'corrected_value': 'ADDED'
+        })
+
     # Load the bids layout
     layout = BIDSLayout(args.bids)
     subsess = read_bids_layout(layout, subject_list=layout.get_subjects(), collect_on_subject=False)
@@ -421,60 +460,63 @@ def main():
     # check if the old GE DV25 through DV28 argument was provided
     if args.dwiCorrectOldGE or args.DCAN != None:
         info("Correcting old GE DV25 through DV28 DWI BVAL and BVEC files")
-        layout = correct_old_GE_DV25_DV28(layout, subsess, args)
+        layout, df = correct_old_GE_DV25_DV28(layout, subsess, args, df)
 
     # check if the acq-dwi fmap IntendedFor argument was provided
     if args.dwifmapIntendedFor or args.DCAN != None:
         info("Assigning dwi fmap IntendedFor field")
-        layout = assign_dwifmapIntendedFor(layout, subsess, args)
+        layout, df = assign_dwifmapIntendedFor(layout, subsess, args, df)
 
     # check if the acq-func fmap IntendedFor argument was provided
     # if so, also run the fmapSeparate option
     if args.funcfmapIntendedFor != None or args.DCAN != None:
         info("Separating concatenated field maps")
-        layout = separate_fmaps(layout, subsess, args)
+        layout, df = separate_fmaps(layout, subsess, args, df)
 
         info("Assigning func fmap IntendedFor fields")
-        layout = assign_funcfmapIntendedFor(layout, subsess, args)
+        layout, df = assign_funcfmapIntendedFor(layout, subsess, args, df)
     # if not and the fmapSeparate option was passed without the funcfmapIntendedFor
     elif args.funcfmapIntendedFor == None and args.fmapSeparate:
         info("Separating concatenated field maps")
-        layout = separate_fmaps(layout, subsess, args)
+        layout, df = separate_fmaps(layout, subsess, args, df)
 
     # check if the anat DwellTime argument was provided
     if args.anatDwellTime or args.DCAN != None:
         info("Injecting anat DwellTime fields")
-        layout = inject_anatDwellTime(layout, subsess, args)
+        layout, df = inject_anatDwellTime(layout, subsess, args, df)
 
     # check if the dwi fmap TotalReadoutTime argument was provided
     if args.dwiTotalReadoutTime or args.DCAN != None:
         info("Injecting dwi and dwi fmap TotalReadoutTime fields")
-        layout = inject_dwiTotalReadoutTime(layout, subsess, args)
+        layout, df = inject_dwiTotalReadoutTime(layout, subsess, args, df)
 
     # check if the dwi fmap EffectiveEchoSpacing argument was provided
     if args.dwiEffectiveEchoSpacing or args.DCAN != None:
         info("Injecting dwi and dwi fmap EffectiveEchoSpacing fields")
-        layout = inject_dwiEffectiveEchoSpacing(layout, subsess, args)
+        layout, df = inject_dwiEffectiveEchoSpacing(layout, subsess, args, df)
 
     # check if the func fmap EffectiveEchoSpacing argument was provided
     if args.funcfmapEffectiveEchoSpacing or args.DCAN != None:
         info("Injecting func fmap EffectiveEchoSpacing fields")
-        layout = inject_funcfmapEffectiveEchoSpacing(layout, subsess, args)
+        layout, df = inject_funcfmapEffectiveEchoSpacing(layout, subsess, args, df)
 
     # check if the func EffectiveEchoSpacing argument was provided
     if args.funcEffectiveEchoSpacing or args.DCAN != None:
         info("Injecting func EffectiveEchoSpacing fields")
-        layout = inject_funcEffectiveEchoSpacing(layout, subsess, args)
+        layout, df = inject_funcEffectiveEchoSpacing(layout, subsess, args, df)
 
     # check if the dwi fmap PhaseEncodingDirection argument was provided
     if args.dwifmapPhaseEncodingDirection or args.DCAN != None:
         info("Injecting dwi fmap PhaseEncodingDirection fields")
-        layout = inject_dwifmapPhaseEncodingDirection(layout, subsess, args)
+        layout, df = inject_dwifmapPhaseEncodingDirection(layout, subsess, args, df)
 
     # check if the PhaseEncoding argument was provided
     if args.funcPhaseEncoding or args.DCAN != None:
         info("Adding PhaseEncodingAxis and Direction fields")
-        layout = add_PhaseEncodingAxisAndDirection(layout, subsess, args)
+        layout, df = add_PhaseEncodingAxisAndDirection(layout, subsess, args, df)
+
+    # save the log
+    df.to_csv(args.bids / '../code/logs/bids_corrections_log.tsv', sep='\t', index=False)
 
 
 if __name__ == '__main__':

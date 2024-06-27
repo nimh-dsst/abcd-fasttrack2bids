@@ -152,7 +152,7 @@ def correct_old_GE_DV25_DV28(layout, subsess, args, df):
                                 df = df_append(df, {
                                     'time': pandas.Timestamp.now(),
                                     'function': 'correct_old_GE_DV25_DV28',
-                                    'file': dwi_bval,
+                                    'file': os.path.basename(dwi_bval),
                                     'field': 'n/a',
                                     'original_value': 'n/a',
                                     'corrected_value': dwi_tables.joinpath('GE_bvals_DV25.txt')
@@ -161,7 +161,7 @@ def correct_old_GE_DV25_DV28(layout, subsess, args, df):
                                 df = df_append(df, {
                                     'time': pandas.Timestamp.now(),
                                     'function': 'correct_old_GE_DV25_DV28',
-                                    'file': dwi_bvec,
+                                    'file': os.path.basename(dwi_bvec),
                                     'field': 'n/a',
                                     'original_value': 'n/a',
                                     'corrected_value': dwi_tables.joinpath('GE_bvecs_DV25.txt')
@@ -171,7 +171,7 @@ def correct_old_GE_DV25_DV28(layout, subsess, args, df):
                                 df = df_append(df, {
                                     'time': pandas.Timestamp.now(),
                                     'function': 'correct_old_GE_DV25_DV28',
-                                    'file': dwi_bval,
+                                    'file': os.path.basename(dwi_bval),
                                     'field': 'n/a',
                                     'original_value': 'n/a',
                                     'corrected_value': dwi_tables.joinpath('GE_bvals_DV26.txt')
@@ -180,7 +180,7 @@ def correct_old_GE_DV25_DV28(layout, subsess, args, df):
                                 df = df_append(df, {
                                     'time': pandas.Timestamp.now(),
                                     'function': 'correct_old_GE_DV25_DV28',
-                                    'file': dwi_bvec,
+                                    'file': os.path.basename(dwi_bvec),
                                     'field': 'n/a',
                                     'original_value': 'n/a',
                                     'corrected_value': dwi_tables.joinpath('GE_bvecs_DV26.txt')
@@ -211,7 +211,7 @@ def separate_fmaps(layout, subsess, args, df):
                 df = df_append(df, {
                     'time': pandas.Timestamp.now(),
                     'function': 'separate_fmaps',
-                    'file': fmap_nifti,
+                    'file': os.path.basename(fmap_nifti),
                     'field': 'n/a',
                     'original_value': 'n/a',
                     'corrected_value': 'REMOVED'
@@ -220,7 +220,7 @@ def separate_fmaps(layout, subsess, args, df):
                 df = df_append(df, {
                     'time': pandas.Timestamp.now(),
                     'function': 'separate_fmaps',
-                    'file': fmap_json,
+                    'file': os.path.basename(fmap_json),
                     'field': 'n/a',
                     'original_value': 'n/a',
                     'corrected_value': 'REMOVED'
@@ -257,7 +257,7 @@ def assign_funcfmapIntendedFor(layout, subsess, args, df):
                 df = df_append(df, {
                     'time': pandas.Timestamp.now(),
                     'function': 'assign_funcfmapIntendedFor',
-                    'file': best,
+                    'file': os.path.basename(best),
                     'field': 'IntendedFor',
                     'original_value': 'n/a',
                     'corrected_value': 'ADDED'
@@ -286,10 +286,10 @@ def assign_dwifmapIntendedFor(layout, subsess, args, df):
             df = df_append(df, {
                 'time': pandas.Timestamp.now(),
                 'function': 'assign_dwifmapIntendedFor',
-                'file': AP_json,
+                'file': os.path.basename(AP_json),
                 'field': 'IntendedFor',
                 'original_value': 'n/a',
-                'corrected_value': dwi_relpath
+                'corrected_value': str(dwi_relpath)
             })
 
     return BIDSLayout(args.bids), df
@@ -307,18 +307,21 @@ def inject_anatDwellTime(layout, subsess, args, df):
 
                 if 'GE' in TX_metadata['Manufacturer']:
                     corrected_value = 0.000536
-                if 'Philips' in TX_metadata['Manufacturer']:
+                elif 'Philips' in TX_metadata['Manufacturer']:
                     corrected_value = 0.00062771
-                if 'Siemens' in TX_metadata['Manufacturer']:
+                elif 'Siemens' in TX_metadata['Manufacturer']:
                     corrected_value = 0.000510012
+                else:
+                    error(f"Manufacturer not recognized for {TX} in inject_anatDwellTime")
+                    continue
 
                 insert_edit_json(TX_json, 'DwellTime', corrected_value)
                 df = df_append(df, {
                     'time': pandas.Timestamp.now(),
                     'function': 'inject_anatDwellTime',
-                    'file': TX_json,
+                    'file': os.path.basename(TX_json),
                     'field': 'DwellTime',
-                    'original_value': TX_metadata['DwellTime'],
+                    'original_value': 'n/a',
                     'corrected_value': corrected_value
                 })
 
@@ -344,20 +347,25 @@ def inject_dwiTotalReadoutTime(layout, subsess, args, df):
             if 'GE' in scan_metadata['Manufacturer']:
                 if 'DV25' in scan_metadata['SoftwareVersions']:
                     corrected_value = 0.104528
-                if 'DV26' in scan_metadata['SoftwareVersions']:
+                elif 'DV26' in scan_metadata['SoftwareVersions']:
                     corrected_value = 0.106752
-            if 'Philips' in scan_metadata['Manufacturer']:
+                else:
+                    continue
+            elif 'Philips' in scan_metadata['Manufacturer']:
                 corrected_value = 0.08976
-            if 'Siemens' in scan_metadata['Manufacturer']:
+            elif 'Siemens' in scan_metadata['Manufacturer']:
                 corrected_value = 0.0959097
+            else:
+                error(f"Manufacturer not recognized for {scan} in inject_dwiTotalReadoutTime")
+                continue
 
             insert_edit_json(scan_json, 'TotalReadoutTime', corrected_value)
             df = df_append(df, {
                 'time': pandas.Timestamp.now(),
                 'function': 'inject_dwiTotalReadoutTime',
-                'file': scan_json,
+                'file': os.path.basename(scan_json),
                 'field': 'TotalReadoutTime',
-                'original_value': scan_metadata['TotalReadoutTime'],
+                'original_value': 'n/a',
                 'corrected_value': corrected_value
             })
 
@@ -383,20 +391,25 @@ def inject_dwiEffectiveEchoSpacing(layout, subsess, args, df):
             if 'GE' in scan_metadata['Manufacturer']:
                 if 'DV25' in scan_metadata['SoftwareVersions']:
                     corrected_value = 0.000752
-                if 'DV26' in scan_metadata['SoftwareVersions']:
+                elif 'DV26' in scan_metadata['SoftwareVersions']:
                     corrected_value = 0.000768
-            if 'Philips' in scan_metadata['Manufacturer']:
+                else:
+                    continue
+            elif 'Philips' in scan_metadata['Manufacturer']:
                 corrected_value = 0.00062771
-            if 'Siemens' in scan_metadata['Manufacturer']:
+            elif 'Siemens' in scan_metadata['Manufacturer']:
                 corrected_value = 0.000689998
+            else:
+                error(f"Manufacturer not recognized for {scan} in inject_dwiEffectiveEchoSpacing")
+                continue
 
             insert_edit_json(scan_json, 'EffectiveEchoSpacing', corrected_value)
             df = df_append(df, {
                 'time': pandas.Timestamp.now(),
                 'function': 'inject_dwiEffectiveEchoSpacing',
-                'file': scan_json,
+                'file': os.path.basename(scan_json),
                 'field': 'EffectiveEchoSpacing',
-                'original_value': scan_metadata['EffectiveEchoSpacing'],
+                'original_value': 'n/a',
                 'corrected_value': corrected_value
             })
 
@@ -415,21 +428,24 @@ def inject_funcfmapEffectiveEchoSpacing(layout, subsess, args, df):
 
                 if 'GE' in fm_metadata['Manufacturer']:
                     corrected_value = 0.000536
-                if 'Philips' in fm_metadata['Manufacturer']:
+                elif 'Philips' in fm_metadata['Manufacturer']:
                     corrected_value = 0.00062771
-                if 'Siemens' in fm_metadata['Manufacturer']:
+                elif 'Siemens' in fm_metadata['Manufacturer']:
                     corrected_value = 0.000510012
+                else:
+                    error(f"Manufacturer not recognized for {fm} in inject_funcfmapEffectiveEchoSpacing")
+                    continue
 
                 insert_edit_json(fm_json, 'EffectiveEchoSpacing', corrected_value)
                 df = df_append(df, {
                     'time': pandas.Timestamp.now(),
                     'function': 'inject_funcfmapEffectiveEchoSpacing',
-                    'file': fm_json,
+                    'file': os.path.basename(fm_json),
                     'field': 'EffectiveEchoSpacing',
-                    'original_value': fm_metadata['EffectiveEchoSpacing'],
+                    'original_value': 'n/a',
                     'corrected_value': corrected_value
                 })
-    
+
     return BIDSLayout(args.bids), df
 
 
@@ -446,18 +462,23 @@ def inject_funcEffectiveEchoSpacing(layout, subsess, args, df):
                 if 'GE' in task_metadata['Manufacturer']:
                     if 'DV26' in task_metadata['SoftwareVersions']:
                         corrected_value = 0.000556
-                if 'Philips' in task_metadata['Manufacturer']:
+                    else:
+                        continue
+                elif 'Philips' in task_metadata['Manufacturer']:
                     corrected_value = 0.00062771
-                if 'Siemens' in task_metadata['Manufacturer']:
+                elif 'Siemens' in task_metadata['Manufacturer']:
                     corrected_value = 0.000510012
+                else:
+                    error(f"Manufacturer not recognized for {task} in inject_funcEffectiveEchoSpacing")
+                    continue
 
                 insert_edit_json(task_json, 'EffectiveEchoSpacing', corrected_value)
                 df = df_append(df, {
                     'time': pandas.Timestamp.now(),
                     'function': 'inject_funcEffectiveEchoSpacing',
-                    'file': task_json,
+                    'file': os.path.basename(task_json),
                     'field': 'EffectiveEchoSpacing',
-                    'original_value': task_metadata['EffectiveEchoSpacing'],
+                    'original_value': 'n/a',
                     'corrected_value': corrected_value
                 })
 
@@ -472,7 +493,6 @@ def inject_dwifmapPhaseEncodingDirection(layout, subsess, args, df):
 
         if AP:
             for fm in [os.path.join(x.dirname, x.filename) for x in AP]:
-                fm_metadata = layout.get_metadata(fm)
                 fm_json = fm.replace('.nii.gz', '.json')
                 corrected_value = 'j-'
 
@@ -480,15 +500,14 @@ def inject_dwifmapPhaseEncodingDirection(layout, subsess, args, df):
                 df = df_append(df, {
                     'time': pandas.Timestamp.now(),
                     'function': 'inject_dwifmapPhaseEncodingDirection',
-                    'file': fm_json,
+                    'file': os.path.basename(fm_json),
                     'field': 'PhaseEncodingDirection',
-                    'original_value': fm_metadata['PhaseEncodingDirection'],
+                    'original_value': 'n/a',
                     'corrected_value': corrected_value
                 })
 
         if PA:
             for fm in [os.path.join(x.dirname, x.filename) for x in PA]:
-                fm_metadata = layout.get_metadata(fm)
                 fm_json = fm.replace('.nii.gz', '.json')
                 corrected_value = 'j'
 
@@ -496,23 +515,11 @@ def inject_dwifmapPhaseEncodingDirection(layout, subsess, args, df):
                 df = df_append(df, {
                     'time': pandas.Timestamp.now(),
                     'function': 'inject_dwifmapPhaseEncodingDirection',
-                    'file': fm_json,
+                    'file': os.path.basename(fm_json),
                     'field': 'PhaseEncodingDirection',
-                    'original_value': fm_metadata['PhaseEncodingDirection'],
+                    'original_value': 'n/a',
                     'corrected_value': corrected_value
                 })
-
-        # # this can't be right, can it? CONFIRMED WITH MATT CIESLAK TO BE INCORRECT
-        # # https://github.com/DCAN-Labs/abcd-dicom2bids/blame/main/src/sefm_eval_and_json_editor.py#L264
-        # dwi = layout.get(subject=subject, session=sessions, datatype='dwi', suffix='dwi', extension='.nii.gz')
-
-        # if dwi:
-        #     for dwi_nifti in [os.path.join(x.dirname, x.filename) for x in dwi]:
-        #         dwi_json = dwi_nifti.replace('.nii.gz', '.json')
-        #         dwi_metadata = layout.get_metadata(dwi_nifti)
-
-        #         if 'Philips' in dwi_metadata['Manufacturer']:
-        #             insert_edit_json(dwi_json, 'PhaseEncodingDirection', 'j')
 
     return BIDSLayout(args.bids), df
 
@@ -535,7 +542,7 @@ def add_PhaseEncodingAxisAndDirection(layout, subsess, args, df):
                     df = df_append(df, {
                         'time': pandas.Timestamp.now(),
                         'function': 'add_PhaseEncodingAxisAndDirection',
-                        'file': task_json,
+                        'file': os.path.basename(task_json),
                         'field': 'PhaseEncodingDirection',
                         'original_value': 'n/a',
                         'corrected_value': corrected_value
@@ -547,7 +554,7 @@ def add_PhaseEncodingAxisAndDirection(layout, subsess, args, df):
                     df = df_append(df, {
                         'time': pandas.Timestamp.now(),
                         'function': 'add_PhaseEncodingAxisAndDirection',
-                        'file': task_json,
+                        'file': os.path.basename(task_json),
                         'field': 'PhaseEncodingAxis',
                         'original_value': 'n/a',
                         'corrected_value': corrected_value
@@ -583,7 +590,7 @@ def main():
         df = df_append(df, {
             'time': pandas.Timestamp.now(),
             'function': 'main',
-            'file': dest_ds_desc,
+            'file': os.path.basename(dest_ds_desc),
             'field': 'n/a',
             'original_value': 'n/a',
             'corrected_value': 'ADDED'
@@ -657,7 +664,8 @@ def main():
         layout, df = add_PhaseEncodingAxisAndDirection(layout, subsess, args, df)
 
     # save the log
-    df.to_csv(args.bids / '../code/logs/bids_corrections_log.tsv', sep='\t', index=False)
+    pipeline_folder = args.bids.parent
+    df.to_csv(pipeline_folder / f'code/logs/bids_corrections_log_{pipeline_folder.name}.tsv', sep='\t', index=False)
 
 
 if __name__ == '__main__':

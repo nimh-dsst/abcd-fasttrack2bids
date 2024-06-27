@@ -51,9 +51,9 @@ Request double the amount of concurrent conversions you do (with `--n-convert` o
 
 You can control the number of concurrent downloads, unpackings, and conversions you want to run with the `--n-download`, `--n-unpack`, and `--n-convert` arguments. Alternatively, you can set all three to the same thing with `--n-all`. This allows for separately specifying the allowed concurrency on your own local system. For instance, at NIH we use only 6 concurrent downloads to be resepctful of the filesystem and network bandwidth, but 12 concurrent unpackings and 12 concurrent conversions to speed up the the very parallel processes.
 
-## Time to download, unpack, and convert
+## Time to filter, download, unpack, convert, correct, and rsync back
 
-FILL IN THE BLANK.
+The whole workflow regularly runs in less than 45 minutes for one MRI session, usually less than 30 minutes. But it's better to set a maximum time of 60 minutes for one MRI session, just in case. If you group many at once then expect the performance to vary from that.
 
 ## Examples
 

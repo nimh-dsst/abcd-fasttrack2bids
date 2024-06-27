@@ -128,6 +128,8 @@ def corrupt_volume_removal(func_run):
             dicom_num = str( (i * num_temporal_positions) + 1 ).zfill(6)
             dicom_basename = dicom_one_basename.replace('000001', dicom_num)
             os.remove(os.path.join(func_run, dicom_basename))
+        
+        # @TODO Record the removal of the corrupt volume to an obvious log file = github issue #8
 
         return True
 

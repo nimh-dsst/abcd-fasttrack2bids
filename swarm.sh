@@ -16,4 +16,4 @@ for LINK in /data/NIMH_scratch/zwallymi/earlea-d2b/downloads/filtered_abcd_fastq
     echo "S{CMD1} ; ${CMD2} ; echo rsyncing data back from /lscratch/\${SLURM_JOB_ID} ; ${CMD3} ; echo rsync completed to ${BIDS_OUTPUT_DIR}" >> ${SWARM_LOGDIR}/${OUTPUT_BASENAME}.swarm
 done
 
-swarm ${SWARM_LOGDIR}/${OUTPUT_BASENAME}.swarm
+echo "swarm ${SWARM_LOGDIR}/${OUTPUT_BASENAME}.swarm"

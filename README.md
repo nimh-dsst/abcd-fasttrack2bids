@@ -47,11 +47,11 @@ Request double the amount of concurrent conversions you do (with `--n-convert` o
 - **BIDS Data**: ~2.5 GB
 - **Temporary Space**: ~12 GB
 
-## CPUs/threads
+### CPUs/threads
 
 You can control the number of concurrent downloads, unpackings, and conversions you want to run with the `--n-download`, `--n-unpack`, and `--n-convert` arguments. Alternatively, you can set all three to the same thing with `--n-all`. This allows for separately specifying the allowed concurrency on your own local system. For instance, at NIH we use only 6 concurrent downloads to be resepctful of the filesystem and network bandwidth, but 12 concurrent unpackings and 12 concurrent conversions to speed up the the very parallel processes.
 
-## Time to filter, download, unpack, convert, correct, and rsync back
+### Time to filter, download, unpack, convert, correct, and rsync back
 
 The whole workflow regularly runs in less than 45 minutes for one MRI session, usually less than 30 minutes. But it's better to set a maximum time of 60 minutes for one MRI session, just in case. If you group many at once then expect the performance to vary from that.
 
@@ -59,7 +59,7 @@ The whole workflow regularly runs in less than 45 minutes for one MRI session, u
 
 ### `fasttrack2s3.py`
 
-1. Filter by default all series (except quality assurance series) from the `~/abcd_fastqc01.txt` file only including the participant-sessions in `~/sessions.csv`, then output the filtered `abcd_fastqc01.txt` files and S3 links to the `~/abcdfasttrack` output directory as both combined and separate files per participant-session (thanks to the `-sep` option).
+Filter by default all series (except quality assurance series) from the `~/abcd_fastqc01.txt` file only including the participant-sessions in `~/sessions.csv`, then output the filtered `abcd_fastqc01.txt` files and S3 links to the `~/abcdfasttrack` output directory as both combined and separate files per participant-session (thanks to the `-sep` option).
 
     ```bash
     cd ~/abcd-fasttrack2bids
@@ -84,7 +84,7 @@ The whole workflow regularly runs in less than 45 minutes for one MRI session, u
 
 ### `bids_corrections.py`
 
-1. Correct the BIDS dataset using the "DCAN Labs corrections" at `~/all_p-20_s-25/rawdata` using the temporary directory of `/scratch/abcd`, logging to `~/all_p-20_s-25/code/logs`, and using the the MCR v9.1 (MATLAB R2016b compiler runtime environment) directory at `~/MCR/v91`.
+Correct the BIDS dataset using the "DCAN Labs corrections" at `~/all_p-20_s-25/rawdata` using the temporary directory of `/scratch/abcd`, logging to `~/all_p-20_s-25/code/logs`, and using the the MCR v9.1 (MATLAB R2016b compiler runtime environment) directory at `~/MCR/v91`.
 
     ```bash
     cd ~/abcd-fasttrack2bids
@@ -95,6 +95,7 @@ The whole workflow regularly runs in less than 45 minutes for one MRI session, u
 
 Thanks to [`DCAN-Labs/abcd-dicom2bids`](https://github.com/DCAN-Labs/abcd-dicom2bids) for:
 
+1. Instructions on how to prepare the NDA data packages
 1. Inspiration of the dcm2bids version 3 configuration JSON
 1. General order of operations for the NDA's fast track conversion to BIDS
 1. Most of the options in `bids_corrections.py`

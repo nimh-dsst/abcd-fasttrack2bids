@@ -168,7 +168,23 @@ def correct_old_GE_DV25_DV28(layout, subsess, args, df):
                                 })
                             else:
                                 shutil.copyfile(dwi_tables.joinpath('GE_bvals_DV26.txt'), dwi_bval)
+                                df = df_append(df, {
+                                    'time': pandas.Timestamp.now(),
+                                    'function': 'correct_old_GE_DV25_DV28',
+                                    'file': dwi_bval,
+                                    'field': 'n/a',
+                                    'original_value': 'n/a',
+                                    'corrected_value': dwi_tables.joinpath('GE_bvals_DV26.txt')
+                                })
                                 shutil.copyfile(dwi_tables.joinpath('GE_bvecs_DV26.txt'), dwi_bvec)
+                                df = df_append(df, {
+                                    'time': pandas.Timestamp.now(),
+                                    'function': 'correct_old_GE_DV25_DV28',
+                                    'file': dwi_bvec,
+                                    'field': 'n/a',
+                                    'original_value': 'n/a',
+                                    'corrected_value': dwi_tables.joinpath('GE_bvecs_DV26.txt')
+                                })
 
     return BIDSLayout(args.bids), df
 
@@ -192,7 +208,23 @@ def separate_fmaps(layout, subsess, args, df):
 
                 # remove the old concatenated field maps
                 os.remove(fmap_nifti)
+                df = df_append(df, {
+                    'time': pandas.Timestamp.now(),
+                    'function': 'separate_fmaps',
+                    'file': fmap_nifti,
+                    'field': 'n/a',
+                    'original_value': 'n/a',
+                    'corrected_value': 'REMOVED'
+                })
                 os.remove(fmap_json)
+                df = df_append(df, {
+                    'time': pandas.Timestamp.now(),
+                    'function': 'separate_fmaps',
+                    'file': fmap_json,
+                    'field': 'n/a',
+                    'original_value': 'n/a',
+                    'corrected_value': 'REMOVED'
+                })
 
             # recreate layout with the additional fmaps
             layout = BIDSLayout(args.bids)
@@ -221,6 +253,15 @@ def assign_funcfmapIntendedFor(layout, subsess, args, df):
             # base_temp_dir = fmaps[0].dirname
             base_temp_dir = args.temporary
             best_pos, best_neg = sefm_select(layout, subject, sessions, base_temp_dir, fsl_dir, MRE_DIR, debug=False)
+            for best in [best_pos, best_neg]:
+                df = df_append(df, {
+                    'time': pandas.Timestamp.now(),
+                    'function': 'assign_funcfmapIntendedFor',
+                    'file': best,
+                    'field': 'IntendedFor',
+                    'original_value': 'n/a',
+                    'corrected_value': 'ADDED'
+                })
 
     return BIDSLayout(args.bids), df
 
@@ -242,6 +283,14 @@ def assign_dwifmapIntendedFor(layout, subsess, args, df):
             debug(sorted_APs)
             AP_json = sorted_APs[0]
             insert_edit_json(AP_json, 'IntendedFor', dwi_relpath)
+            df = df_append(df, {
+                'time': pandas.Timestamp.now(),
+                'function': 'assign_dwifmapIntendedFor',
+                'file': AP_json,
+                'field': 'IntendedFor',
+                'original_value': 'n/a',
+                'corrected_value': dwi_relpath
+            })
 
     return BIDSLayout(args.bids), df
 
@@ -257,11 +306,21 @@ def inject_anatDwellTime(layout, subsess, args, df):
                 TX_metadata = layout.get_metadata(TX)
 
                 if 'GE' in TX_metadata['Manufacturer']:
-                    insert_edit_json(TX_json, 'DwellTime', 0.000536)
+                    corrected_value = 0.000536
                 if 'Philips' in TX_metadata['Manufacturer']:
-                    insert_edit_json(TX_json, 'DwellTime', 0.00062771)
+                    corrected_value = 0.00062771
                 if 'Siemens' in TX_metadata['Manufacturer']:
-                    insert_edit_json(TX_json, 'DwellTime', 0.000510012)
+                    corrected_value = 0.000510012
+
+                insert_edit_json(TX_json, 'DwellTime', corrected_value)
+                df = df_append(df, {
+                    'time': pandas.Timestamp.now(),
+                    'function': 'inject_anatDwellTime',
+                    'file': TX_json,
+                    'field': 'DwellTime',
+                    'original_value': TX_metadata['DwellTime'],
+                    'corrected_value': corrected_value
+                })
 
     return BIDSLayout(args.bids), df
 
@@ -284,13 +343,23 @@ def inject_dwiTotalReadoutTime(layout, subsess, args, df):
 
             if 'GE' in scan_metadata['Manufacturer']:
                 if 'DV25' in scan_metadata['SoftwareVersions']:
-                    insert_edit_json(scan_json, 'TotalReadoutTime', 0.104528)
+                    corrected_value = 0.104528
                 if 'DV26' in scan_metadata['SoftwareVersions']:
-                    insert_edit_json(scan_json, 'TotalReadoutTime', 0.106752)
+                    corrected_value = 0.106752
             if 'Philips' in scan_metadata['Manufacturer']:
-                insert_edit_json(scan_json, 'TotalReadoutTime', 0.08976)
+                corrected_value = 0.08976
             if 'Siemens' in scan_metadata['Manufacturer']:
-                insert_edit_json(scan_json, 'TotalReadoutTime', 0.0959097)
+                corrected_value = 0.0959097
+
+            insert_edit_json(scan_json, 'TotalReadoutTime', corrected_value)
+            df = df_append(df, {
+                'time': pandas.Timestamp.now(),
+                'function': 'inject_dwiTotalReadoutTime',
+                'file': scan_json,
+                'field': 'TotalReadoutTime',
+                'original_value': scan_metadata['TotalReadoutTime'],
+                'corrected_value': corrected_value
+            })
 
     return BIDSLayout(args.bids), df
 
@@ -313,13 +382,23 @@ def inject_dwiEffectiveEchoSpacing(layout, subsess, args, df):
 
             if 'GE' in scan_metadata['Manufacturer']:
                 if 'DV25' in scan_metadata['SoftwareVersions']:
-                    insert_edit_json(scan_json, 'EffectiveEchoSpacing', 0.000752)
+                    corrected_value = 0.000752
                 if 'DV26' in scan_metadata['SoftwareVersions']:
-                    insert_edit_json(scan_json, 'EffectiveEchoSpacing', 0.000768)
+                    corrected_value = 0.000768
             if 'Philips' in scan_metadata['Manufacturer']:
-                insert_edit_json(scan_json, 'EffectiveEchoSpacing', 0.00062771)
+                corrected_value = 0.00062771
             if 'Siemens' in scan_metadata['Manufacturer']:
-                insert_edit_json(scan_json, 'EffectiveEchoSpacing', 0.000689998)
+                corrected_value = 0.000689998
+
+            insert_edit_json(scan_json, 'EffectiveEchoSpacing', corrected_value)
+            df = df_append(df, {
+                'time': pandas.Timestamp.now(),
+                'function': 'inject_dwiEffectiveEchoSpacing',
+                'file': scan_json,
+                'field': 'EffectiveEchoSpacing',
+                'original_value': scan_metadata['EffectiveEchoSpacing'],
+                'corrected_value': corrected_value
+            })
 
     return BIDSLayout(args.bids), df
 
@@ -335,11 +414,21 @@ def inject_funcfmapEffectiveEchoSpacing(layout, subsess, args, df):
                 fm_metadata = layout.get_metadata(fm)
 
                 if 'GE' in fm_metadata['Manufacturer']:
-                    insert_edit_json(fm_json, 'EffectiveEchoSpacing', 0.000536)
+                    corrected_value = 0.000536
                 if 'Philips' in fm_metadata['Manufacturer']:
-                    insert_edit_json(fm_json, 'EffectiveEchoSpacing', 0.00062771)
+                    corrected_value = 0.00062771
                 if 'Siemens' in fm_metadata['Manufacturer']:
-                    insert_edit_json(fm_json, 'EffectiveEchoSpacing', 0.000510012)
+                    corrected_value = 0.000510012
+
+                insert_edit_json(fm_json, 'EffectiveEchoSpacing', corrected_value)
+                df = df_append(df, {
+                    'time': pandas.Timestamp.now(),
+                    'function': 'inject_funcfmapEffectiveEchoSpacing',
+                    'file': fm_json,
+                    'field': 'EffectiveEchoSpacing',
+                    'original_value': fm_metadata['EffectiveEchoSpacing'],
+                    'corrected_value': corrected_value
+                })
     
     return BIDSLayout(args.bids), df
 
@@ -356,12 +445,22 @@ def inject_funcEffectiveEchoSpacing(layout, subsess, args, df):
 
                 if 'GE' in task_metadata['Manufacturer']:
                     if 'DV26' in task_metadata['SoftwareVersions']:
-                        insert_edit_json(task_json, 'EffectiveEchoSpacing', 0.000556)
+                        corrected_value = 0.000556
                 if 'Philips' in task_metadata['Manufacturer']:
-                    insert_edit_json(task_json, 'EffectiveEchoSpacing', 0.00062771)
+                    corrected_value = 0.00062771
                 if 'Siemens' in task_metadata['Manufacturer']:
-                    insert_edit_json(task_json, 'EffectiveEchoSpacing', 0.000510012)
-    
+                    corrected_value = 0.000510012
+
+                insert_edit_json(task_json, 'EffectiveEchoSpacing', corrected_value)
+                df = df_append(df, {
+                    'time': pandas.Timestamp.now(),
+                    'function': 'inject_funcEffectiveEchoSpacing',
+                    'file': task_json,
+                    'field': 'EffectiveEchoSpacing',
+                    'original_value': task_metadata['EffectiveEchoSpacing'],
+                    'corrected_value': corrected_value
+                })
+
     return BIDSLayout(args.bids), df
 
 
@@ -373,14 +472,37 @@ def inject_dwifmapPhaseEncodingDirection(layout, subsess, args, df):
 
         if AP:
             for fm in [os.path.join(x.dirname, x.filename) for x in AP]:
+                fm_metadata = layout.get_metadata(fm)
                 fm_json = fm.replace('.nii.gz', '.json')
-                insert_edit_json(fm_json, 'PhaseEncodingDirection', 'j-')
+                corrected_value = 'j-'
+
+                insert_edit_json(fm_json, 'PhaseEncodingDirection', corrected_value)
+                df = df_append(df, {
+                    'time': pandas.Timestamp.now(),
+                    'function': 'inject_dwifmapPhaseEncodingDirection',
+                    'file': fm_json,
+                    'field': 'PhaseEncodingDirection',
+                    'original_value': fm_metadata['PhaseEncodingDirection'],
+                    'corrected_value': corrected_value
+                })
+
         if PA:
             for fm in [os.path.join(x.dirname, x.filename) for x in PA]:
+                fm_metadata = layout.get_metadata(fm)
                 fm_json = fm.replace('.nii.gz', '.json')
-                insert_edit_json(fm_json, 'PhaseEncodingDirection', 'j')
+                corrected_value = 'j'
 
-        # # this can't be right, can it?
+                insert_edit_json(fm_json, 'PhaseEncodingDirection', corrected_value)
+                df = df_append(df, {
+                    'time': pandas.Timestamp.now(),
+                    'function': 'inject_dwifmapPhaseEncodingDirection',
+                    'file': fm_json,
+                    'field': 'PhaseEncodingDirection',
+                    'original_value': fm_metadata['PhaseEncodingDirection'],
+                    'corrected_value': corrected_value
+                })
+
+        # # this can't be right, can it? CONFIRMED WITH MATT CIESLAK TO BE INCORRECT
         # # https://github.com/DCAN-Labs/abcd-dicom2bids/blame/main/src/sefm_eval_and_json_editor.py#L264
         # dwi = layout.get(subject=subject, session=sessions, datatype='dwi', suffix='dwi', extension='.nii.gz')
 
@@ -408,9 +530,28 @@ def add_PhaseEncodingAxisAndDirection(layout, subsess, args, df):
 
                 # add whichever field is missing based on the other
                 if "PhaseEncodingAxis" in task_metadata:
-                    insert_edit_json(task_json, 'PhaseEncodingDirection', task_metadata['PhaseEncodingAxis'])
+                    corrected_value = task_metadata['PhaseEncodingAxis']
+                    insert_edit_json(task_json, 'PhaseEncodingDirection', corrected_value)
+                    df = df_append(df, {
+                        'time': pandas.Timestamp.now(),
+                        'function': 'add_PhaseEncodingAxisAndDirection',
+                        'file': task_json,
+                        'field': 'PhaseEncodingDirection',
+                        'original_value': 'n/a',
+                        'corrected_value': corrected_value
+                    })
+
                 elif "PhaseEncodingDirection" in task_metadata:
-                    insert_edit_json(task_json, 'PhaseEncodingAxis', task_metadata['PhaseEncodingDirection'].strip('-'))
+                    corrected_value = task_metadata['PhaseEncodingDirection'].strip('-')
+                    insert_edit_json(task_json, 'PhaseEncodingAxis', corrected_value)
+                    df = df_append(df, {
+                        'time': pandas.Timestamp.now(),
+                        'function': 'add_PhaseEncodingAxisAndDirection',
+                        'file': task_json,
+                        'field': 'PhaseEncodingAxis',
+                        'original_value': 'n/a',
+                        'corrected_value': corrected_value
+                    })
 
     return BIDSLayout(args.bids), df
 

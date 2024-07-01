@@ -8,9 +8,11 @@ NDA_PACKAGE_ID=1228006
 SESSIONS_CSV=/data/NIMH_scratch/zwallymi/earlea-d2b/downloads/small_sessions.csv
 LOG_BASEDIR=/data/NIMH_scratch/zwallymi/earlea-d2b/logs
 
-# cleanup pre-run to allow all files to be downloaded
+# cleanup pre-run to allow all files to be downloaded, this also gest around a bug in downloadcmd
 echo "### Cleaning out the download progress file to allow all files to be downloaded ###"
-rm -rf ~/NDA/nda-tools/downloadcmd/packages/${NDA_PACKAGE_ID}/.download-progress/*
+DOWNLOAD_PROGRESS_DIR=~/NDA/nda-tools/downloadcmd/packages/${NDA_PACKAGE_ID}/.download-progress
+mkdir -p ${DOWNLOAD_PROGRESS_DIR}
+rm -rf ${DOWNLOAD_PROGRESS_DIR}/*
 
 # run the fasttrack2s3.py script
 echo "### Running the fasttrack2s3.py script ###"

@@ -109,13 +109,25 @@ def cli():
                             'functional JSON sidecar metadata files, '
                             'as recommended by DCAN-Labs/abcd-dicom2bids.')
 
-    parser.add_argument('--fmapbvalbvecRemove', action='store_true', required=False,
-                        help='Remove any present BVAL and BVEC files alongside '
-                            'field maps.')
-
     parser.add_argument('--dwibvalCorrectFloatingPointError', action='store_true', required=False,
                         help='Correct any floating point errors in the DWI '
                             'BVAL files.')
+
+    parser.add_argument('--fmapTotalReadoutTime', action='store_true', required=False,
+                        help='Inject a calculated TotalReadoutTime field into the '
+                            'fmap JSON sidecar metadata files if '
+                            'EffectiveEchoSpacing and ReconMatrixPE are present, '
+                            'as recommended by the DCAN-Labs/abcd-dicom2bids repo.')
+
+    parser.add_argument('--funcTotalReadoutTime', action='store_true', required=False,
+                        help='Inject a calculated TotalReadoutTime field into the '
+                            'func JSON sidecar metadata files if '
+                            'EffectiveEchoSpacing and ReconMatrixPE are present, '
+                            'as recommended by the DCAN-Labs/abcd-dicom2bids repo.')
+
+    parser.add_argument('--fmapbvalbvecRemove', action='store_true', required=False,
+                        help='Remove any present BVAL and BVEC files alongside '
+                            'field maps.')
 
     parser.add_argument('--DCAN', nargs=1, default=None, required=False,
                         metavar='MRE_DIR',
@@ -607,6 +619,56 @@ def remove_func_slice_timing(layout, subsess, args, df):
     return BIDSLayout(args.bids), df
 
 
+def calculate_fmapTotalReadoutTime(layout, subsess, args, df):
+    for subject, sessions in subsess:
+
+        fmaps = layout.get(subject=subject, session=sessions, datatype='fmap', extension='.nii.gz')
+
+        if fmaps:
+            for fm in [os.path.join(x.dirname, x.filename) for x in fmaps]:
+                fm_json = fm.replace('.nii.gz', '.json')
+                fm_metadata = layout.get_metadata(fm)
+
+                if 'EffectiveEchoSpacing' in fm_metadata and 'ReconMatrixPE' in fm_metadata:
+                    corrected_value = fm_metadata['EffectiveEchoSpacing'] * ( fm_metadata['ReconMatrixPE'] - 1 )
+                    insert_edit_json(fm_json, 'TotalReadoutTime', corrected_value)
+                    df = df_append(df, {
+                        'time': pandas.Timestamp.now(),
+                        'function': 'calculate_fmapTotalReadoutTime',
+                        'file': os.path.basename(fm_json),
+                        'field': 'TotalReadoutTime',
+                        'original_value': 'n/a',
+                        'corrected_value': corrected_value
+                    })
+
+    return BIDSLayout(args.bids), df
+
+
+def calculate_funcTotalReadoutTime(layout, subsess, args, df):
+    for subject, sessions in subsess:
+
+        funcs = layout.get(subject=subject, session=sessions, datatype='func', extension='.nii.gz')
+
+        if funcs:
+            for task in [os.path.join(x.dirname, x.filename) for x in funcs]:
+                task_json = task.replace('.nii.gz', '.json')
+                task_metadata = layout.get_metadata(task)
+
+                if 'EffectiveEchoSpacing' in task_metadata and 'ReconMatrixPE' in task_metadata:
+                    corrected_value = task_metadata['EffectiveEchoSpacing'] * ( task_metadata['ReconMatrixPE'] - 1 )
+                    insert_edit_json(task_json, 'TotalReadoutTime', corrected_value)
+                    df = df_append(df, {
+                        'time': pandas.Timestamp.now(),
+                        'function': 'calculate_funcTotalReadoutTime',
+                        'file': os.path.basename(task_json),
+                        'field': 'TotalReadoutTime',
+                        'original_value': 'n/a',
+                        'corrected_value': corrected_value
+                    })
+
+    return BIDSLayout(args.bids), df
+
+
 def remove_fmap_bval_bvec(layout, subsess, args, df):
     for subject, sessions in subsess:
         fmaps = layout.get(subject=subject, session=sessions, datatype='fmap', extension='.nii.gz')
@@ -790,6 +852,16 @@ def main():
     if args.dwibvalCorrectFloatingPointError or args.DCAN != None:
         info("Correcting floating point errors in DWI BVAL files")
         layout, df = correct_dwi_bval_floating_point_error(layout, subsess, args, df)
+    
+    # check if the fmap TotalReadoutTime argument was provided
+    if args.fmapTotalReadoutTime or args.DCAN != None:
+        info("Calculating fmap TotalReadoutTime fields")
+        layout, df = calculate_fmapTotalReadoutTime(layout, subsess, args, df)
+
+    # check if the func TotalReadoutTime argument was provided
+    if args.funcTotalReadoutTime or args.DCAN != None:
+        info("Calculating func TotalReadoutTime fields")
+        layout, df = calculate_funcTotalReadoutTime(layout, subsess, args, df)
 
     # check if fmap bval/bvec removal argument was provided
     if args.fmapbvalbvecRemove:

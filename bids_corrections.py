@@ -4,12 +4,14 @@
 
 # Importing the required libraries
 import argparse
+import json
 import logging
 import os
 import pandas
 import shutil
 
 from bids import BIDSLayout
+from copy import deepcopy
 from dependencies.sefm_eval_and_json_editor import insert_edit_json
 from dependencies.sefm_eval_and_json_editor import read_bids_layout
 from dependencies.sefm_eval_and_json_editor import sefm_select
@@ -102,11 +104,18 @@ def cli():
                             'func JSON sidecar metadata files, '
                             'as recommended by DCAN-Labs/abcd-dicom2bids.')
 
-    parser.add_argument('--fmapbvalbvecremove', action='store_true', required=False,
-                        help='Remove any present BVAL and BVEC files for field maps.')
+    parser.add_argument('--funcSliceTimingRemove', action='store_true', required=False,
+                        help='Remove any present SliceTiming fields from '
+                            'functional JSON sidecar metadata files, '
+                            'as recommended by DCAN-Labs/abcd-dicom2bids.')
+
+    parser.add_argument('--fmapbvalbvecRemove', action='store_true', required=False,
+                        help='Remove any present BVAL and BVEC files alongside '
+                            'field maps.')
 
     parser.add_argument('--dwibvalCorrectFloatingPointError', action='store_true', required=False,
-                        help='Correct any floating point errors in the DWI BVAL files.')
+                        help='Correct any floating point errors in the DWI '
+                            'BVAL files.')
 
     parser.add_argument('--DCAN', nargs=1, default=None, required=False,
                         metavar='MRE_DIR',
@@ -569,6 +578,35 @@ def add_PhaseEncodingAxisAndDirection(layout, subsess, args, df):
     return BIDSLayout(args.bids), df
 
 
+def remove_func_slice_timing(layout, subsess, args, df):
+    for subject, sessions in subsess:
+        funcs = layout.get(subject=subject, session=sessions, datatype='func', extension='.nii.gz')
+
+        for func in [os.path.join(x.dirname, x.filename) for x in funcs]:
+            func_json = func.replace('.nii.gz', '.json')
+
+            if 'SliceTiming' in layout.get_metadata(func):
+                with open(func_json, 'r') as f:
+                    contents = json.load(f)
+
+                st = deepcopy(contents['SliceTiming'])
+                del contents['SliceTiming']
+
+                with open(func_json, 'w') as f:
+                    json.dump(contents, f, indent=4)
+
+                df = df_append(df, {
+                    'time': pandas.Timestamp.now(),
+                    'function': 'remove_func_slice_timing',
+                    'file': os.path.basename(func_json),
+                    'field': 'SliceTiming',
+                    'original_value': str(st),
+                    'corrected_value': 'REMOVED'
+                })
+
+    return BIDSLayout(args.bids), df
+
+
 def remove_fmap_bval_bvec(layout, subsess, args, df):
     for subject, sessions in subsess:
         fmaps = layout.get(subject=subject, session=sessions, datatype='fmap', extension='.nii.gz')
@@ -744,14 +782,19 @@ def main():
         info("Adding PhaseEncodingAxis and Direction fields")
         layout, df = add_PhaseEncodingAxisAndDirection(layout, subsess, args, df)
 
-    # check if fmap bval/bvec removal argument was provided
-    if args.fmapbvalbvecremove:
-        info("Removing field map BVAL and BVEC files")
-        layout, df = remove_fmap_bval_bvec(layout, subsess, args, df)
+    # check if the func SliceTiming argument was provided
+    if args.funcSliceTimingRemove or args.DCAN != None:
+        info("Removing func SliceTiming fields")
+        layout, df = remove_func_slice_timing(layout, subsess, args, df)
 
-    if args.dwibvalCorrectFloatingPointError:
+    if args.dwibvalCorrectFloatingPointError or args.DCAN != None:
         info("Correcting floating point errors in DWI BVAL files")
         layout, df = correct_dwi_bval_floating_point_error(layout, subsess, args, df)
+
+    # check if fmap bval/bvec removal argument was provided
+    if args.fmapbvalbvecRemove:
+        info("Removing field map BVAL and BVEC files")
+        layout, df = remove_fmap_bval_bvec(layout, subsess, args, df)
 
     # save the log
     pipeline_folder = args.bids.parent

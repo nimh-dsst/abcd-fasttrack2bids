@@ -44,8 +44,8 @@ Request double the amount of concurrent conversions you do (with `--n-convert` o
 
 - **Downloaded TGZs**: ~### GB
 - **Unpacked DICOMs**: ~### GB
-- **BIDS Data**: ~2.5 GB
-- **Temporary Space**: ~12 GB
+- **BIDS Data**: ~3 GB
+- **Temporary Space**: ~15 GB
 
 ### CPUs/threads
 

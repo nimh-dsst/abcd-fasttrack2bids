@@ -102,6 +102,9 @@ def cli():
                             'func JSON sidecar metadata files, '
                             'as recommended by DCAN-Labs/abcd-dicom2bids.')
 
+    parser.add_argument('--fmapbvalbvecremove', action='store_true', required=False,
+                        help='Remove any present BVAL and BVEC files for field maps.')
+
     parser.add_argument('--DCAN', nargs=1, default=None, required=False,
                         metavar='MRE_DIR',
                         help='Run all of the DCAN-Labs/abcd-dicom2bids recommendations. '
@@ -563,6 +566,36 @@ def add_PhaseEncodingAxisAndDirection(layout, subsess, args, df):
     return BIDSLayout(args.bids), df
 
 
+def remove_fmap_bval_bvec(layout, subsess, args, df):
+        for subject, sessions in subsess:
+            fmaps = layout.get(subject=subject, session=sessions, datatype='fmap', extension='.nii.gz')
+            for fmap in [os.path.join(x.dirname, x.filename) for x in fmaps]:
+                bval = fmap.replace('.nii.gz', '.bval')
+                bvec = fmap.replace('.nii.gz', '.bvec')
+                if os.path.exists(bval):
+                    os.remove(bval)
+                    df = df_append(df, {
+                        'time': pandas.Timestamp.now(),
+                        'function': 'remove_fmap_bval_bvec',
+                        'file': bval,
+                        'field': 'n/a',
+                        'original_value': os.path.basename(bval),
+                        'corrected_value': 'REMOVED'
+                    })
+                if os.path.exists(bvec):
+                    os.remove(bvec)
+                    df = df_append(df, {
+                        'time': pandas.Timestamp.now(),
+                        'function': 'remove_fmap_bval_bvec',
+                        'file': bvec,
+                        'field': 'n/a',
+                        'original_value': os.path.basename(bvec),
+                        'corrected_value': 'REMOVED'
+                    })
+        
+        return BIDSLayout(args.bids), df
+
+
 def main():
     # Parse the command line
     args = cli()
@@ -678,6 +711,11 @@ def main():
     if args.funcPhaseEncoding or args.DCAN != None:
         info("Adding PhaseEncodingAxis and Direction fields")
         layout, df = add_PhaseEncodingAxisAndDirection(layout, subsess, args, df)
+
+    # check if fmap bval/bvec removal argument was provided
+    if args.fmapbvalbvecremove:
+        info("Removing field map BVAL and BVEC files")
+        layout, df = remove_fmap_bval_bvec(layout, subsess, args, df)
 
     # save the log
     pipeline_folder = args.bids.parent

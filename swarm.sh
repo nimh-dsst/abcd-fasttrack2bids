@@ -35,9 +35,9 @@ echo "#SWARM --logdir ${LOG_DIR}" >> ${SWARM_FILE}
 for LINK in ${LOG_DIR}/*/*_s3links.txt ; do
     CMD1="poetry run --directory ${CODE_DIR} python ${CODE_DIR}/pipeline.py -p ${NDA_PACKAGE_ID} -c ${CODE_DIR}/dcm2bids_v3_config.json -z LOGS BIDS --n-download 2 --n-unpack 2 --n-convert 1 -o /lscratch/\${SLURM_JOB_ID} -s ${LINK}"
     CMD2="poetry run --directory ${CODE_DIR} python ${CODE_DIR}/bids_corrections.py -b /lscratch/\${SLURM_JOB_ID}/rawdata -t /lscratch/\${SLURM_JOB_ID} --fmapbvalbvecRemove --DCAN ${MCR91_DIR}"
-    CMD3="for BIDS in code rawdata sourcedata ; do if [ -d /lscratch/\${SLURM_JOB_ID}/\${BIDS} ] ; then rsync -art /lscratch/\${SLURM_JOB_ID}/\${BIDS} ${BIDS_OUTPUT_DIR}/ ; fi ; done"
+    CMD3="for BIDS in code rawdata sourcedata ; do if [ -d /lscratch/\${SLURM_JOB_ID}/\${BIDS} ] ; then echo rsyncing from /lscratch/\${SLURM_JOB_ID}/\${BIDS} ; rsync -art /lscratch/\${SLURM_JOB_ID}/\${BIDS} ${BIDS_OUTPUT_DIR}/ ; fi ; done"
 
-    echo "${CMD1} ; ${CMD2} ; echo rsyncing data back from /lscratch/\${SLURM_JOB_ID} ; ${CMD3} ; echo rsync completed to ${BIDS_OUTPUT_DIR}" >> ${SWARM_FILE}
+    echo "${CMD1} ; ${CMD2} ; ${CMD3} ; echo rsync completed to ${BIDS_OUTPUT_DIR}" >> ${SWARM_FILE}
 done
 
 echo "### The following command is printed for your convenience, but not run yet ###"

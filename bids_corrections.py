@@ -20,8 +20,8 @@ from utilities import readable, writable, available
 
 # get the path to here
 HERE = Path(__file__).parent.resolve()
-dwi_tables = HERE / 'dependencies' / 'ABCD_Release_2.0_Diffusion_Tables'
-ds_desc = HERE / 'dataset_description.json'
+dwi_tables = HERE / 'dependencies/ABCD_Release_2.0_Diffusion_Tables'
+ds_desc = HERE / 'dependencies/bids/dataset_description.json'
 
 # Set up logging
 LOG_FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
@@ -155,7 +155,7 @@ def correct_old_GE_DV25_DV28(layout, subsess, args, df):
                                     'file': os.path.basename(dwi_bval),
                                     'field': 'n/a',
                                     'original_value': 'n/a',
-                                    'corrected_value': dwi_tables.joinpath('GE_bvals_DV25.txt')
+                                    'corrected_value': 'GE_bvals_DV25.txt'
                                 })
                                 shutil.copyfile(dwi_tables.joinpath('GE_bvecs_DV25.txt'), dwi_bvec)
                                 df = df_append(df, {
@@ -164,7 +164,7 @@ def correct_old_GE_DV25_DV28(layout, subsess, args, df):
                                     'file': os.path.basename(dwi_bvec),
                                     'field': 'n/a',
                                     'original_value': 'n/a',
-                                    'corrected_value': dwi_tables.joinpath('GE_bvecs_DV25.txt')
+                                    'corrected_value': 'GE_bvecs_DV25.txt'
                                 })
                             else:
                                 shutil.copyfile(dwi_tables.joinpath('GE_bvals_DV26.txt'), dwi_bval)
@@ -174,7 +174,7 @@ def correct_old_GE_DV25_DV28(layout, subsess, args, df):
                                     'file': os.path.basename(dwi_bval),
                                     'field': 'n/a',
                                     'original_value': 'n/a',
-                                    'corrected_value': dwi_tables.joinpath('GE_bvals_DV26.txt')
+                                    'corrected_value': 'GE_bvals_DV26.txt'
                                 })
                                 shutil.copyfile(dwi_tables.joinpath('GE_bvecs_DV26.txt'), dwi_bvec)
                                 df = df_append(df, {
@@ -183,7 +183,7 @@ def correct_old_GE_DV25_DV28(layout, subsess, args, df):
                                     'file': os.path.basename(dwi_bvec),
                                     'field': 'n/a',
                                     'original_value': 'n/a',
-                                    'corrected_value': dwi_tables.joinpath('GE_bvecs_DV26.txt')
+                                    'corrected_value': 'GE_bvecs_DV26.txt'
                                 })
 
     return BIDSLayout(args.bids), df
@@ -595,6 +595,22 @@ def main():
             'original_value': 'n/a',
             'corrected_value': 'ADDED'
         })
+
+    # add the task JSONs to the BIDS directory
+    task_json_root = HERE / 'dependencies/bids'
+    for task_json in task_json_root.glob('task-*_bold.json'):
+        dest_task_json = args.bids / task_json.name
+
+        if not dest_task_json.exists():
+            shutil.copyfile(task_json, dest_task_json)
+            df = df_append(df, {
+                'time': pandas.Timestamp.now(),
+                'function': 'main',
+                'file': os.path.basename(dest_task_json),
+                'field': 'n/a',
+                'original_value': 'n/a',
+                'corrected_value': 'ADDED'
+            })
 
     # Load the bids layout
     layout = BIDSLayout(args.bids)

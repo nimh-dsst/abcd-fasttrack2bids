@@ -4,7 +4,7 @@
 ABCD_FASTQC01=/data/NIMH_scratch/zwallymi/earlea-d2b/fastqc/20240501_abcd_fastqc01.txt
 BIDS_OUTPUT_DIR=/data/NIMH_scratch/zwallymi/earlea-d2b/downloads/testing_chain
 MCR91_DIR=/data/NIMH_scratch/zwallymi/earlea-d2b/abcd-dicom2bids/env_setup/MCR_v9.1/v91
-NDA_PACKAGE_ID=1228006
+NDA_PACKAGE_ID=1230191
 SESSIONS_CSV=/data/NIMH_scratch/zwallymi/earlea-d2b/downloads/small_sessions.csv
 LOG_BASEDIR=/data/NIMH_scratch/zwallymi/earlea-d2b/logs
 

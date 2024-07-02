@@ -105,6 +105,9 @@ def cli():
     parser.add_argument('--fmapbvalbvecremove', action='store_true', required=False,
                         help='Remove any present BVAL and BVEC files for field maps.')
 
+    parser.add_argument('--dwibvalCorrectFloatingPointError', action='store_true', required=False,
+                        help='Correct any floating point errors in the DWI BVAL files.')
+
     parser.add_argument('--DCAN', nargs=1, default=None, required=False,
                         metavar='MRE_DIR',
                         help='Run all of the DCAN-Labs/abcd-dicom2bids recommendations. '
@@ -567,33 +570,62 @@ def add_PhaseEncodingAxisAndDirection(layout, subsess, args, df):
 
 
 def remove_fmap_bval_bvec(layout, subsess, args, df):
-        for subject, sessions in subsess:
-            fmaps = layout.get(subject=subject, session=sessions, datatype='fmap', extension='.nii.gz')
-            for fmap in [os.path.join(x.dirname, x.filename) for x in fmaps]:
-                bval = fmap.replace('.nii.gz', '.bval')
-                bvec = fmap.replace('.nii.gz', '.bvec')
-                if os.path.exists(bval):
-                    os.remove(bval)
-                    df = df_append(df, {
-                        'time': pandas.Timestamp.now(),
-                        'function': 'remove_fmap_bval_bvec',
-                        'file': bval,
-                        'field': 'n/a',
-                        'original_value': os.path.basename(bval),
-                        'corrected_value': 'REMOVED'
-                    })
-                if os.path.exists(bvec):
-                    os.remove(bvec)
-                    df = df_append(df, {
-                        'time': pandas.Timestamp.now(),
-                        'function': 'remove_fmap_bval_bvec',
-                        'file': bvec,
-                        'field': 'n/a',
-                        'original_value': os.path.basename(bvec),
-                        'corrected_value': 'REMOVED'
-                    })
+    for subject, sessions in subsess:
+        fmaps = layout.get(subject=subject, session=sessions, datatype='fmap', extension='.nii.gz')
+        for fmap in [os.path.join(x.dirname, x.filename) for x in fmaps]:
+            bval = fmap.replace('.nii.gz', '.bval')
+            bvec = fmap.replace('.nii.gz', '.bvec')
+            if os.path.exists(bval):
+                os.remove(bval)
+                df = df_append(df, {
+                    'time': pandas.Timestamp.now(),
+                    'function': 'remove_fmap_bval_bvec',
+                    'file': bval,
+                    'field': 'n/a',
+                    'original_value': os.path.basename(bval),
+                    'corrected_value': 'REMOVED'
+                })
+            if os.path.exists(bvec):
+                os.remove(bvec)
+                df = df_append(df, {
+                    'time': pandas.Timestamp.now(),
+                    'function': 'remove_fmap_bval_bvec',
+                    'file': bvec,
+                    'field': 'n/a',
+                    'original_value': os.path.basename(bvec),
+                    'corrected_value': 'REMOVED'
+                })
         
-        return BIDSLayout(args.bids), df
+    return BIDSLayout(args.bids), df
+
+
+def correct_dwi_bval_floating_point_error(layout, subsess, args, df):
+    for subject, sessions in subsess:
+        dwis = layout.get(subject=subject, session=sessions, datatype='dwi', extension='.nii.gz')
+        for dwi in [os.path.join(x.dirname, x.filename) for x in dwis]:
+            bval = dwi.replace('.nii.gz', '.bval')
+            if os.path.exists(bval):
+
+                # read the first line of the bval file
+                with open(bval, 'r') as f:
+                    line = f.readline().rstrip('\n')
+
+                # write in the corrected line
+                if '.' in line:
+                    newline = ' '.join([ str(int(round(float(b)))) for b in line.strip().split() ])
+                    with open(bval, 'w') as f:
+                        f.write(newline)
+
+                    df = df_append(df, {
+                        'time': pandas.Timestamp.now(),
+                        'function': 'correct_dwi_bval_floating_point_error',
+                        'file': os.path.basename(bval),
+                        'field': 'n/a',
+                        'original_value': str(line),
+                        'corrected_value': str(newline)
+                    })
+
+    return BIDSLayout(args.bids), df
 
 
 def main():
@@ -716,6 +748,10 @@ def main():
     if args.fmapbvalbvecremove:
         info("Removing field map BVAL and BVEC files")
         layout, df = remove_fmap_bval_bvec(layout, subsess, args, df)
+
+    if args.dwibvalCorrectFloatingPointError:
+        info("Correcting floating point errors in DWI BVAL files")
+        layout, df = correct_dwi_bval_floating_point_error(layout, subsess, args, df)
 
     # save the log
     pipeline_folder = args.bids.parent

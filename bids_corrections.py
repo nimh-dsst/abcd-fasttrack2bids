@@ -8,6 +8,7 @@ import json
 import logging
 import os
 import pandas
+import re
 import shutil
 
 from bids import BIDSLayout
@@ -216,7 +217,51 @@ def correct_old_GE_DV25_DV28(layout, subsess, args, df):
     return BIDSLayout(args.bids), df
 
 
-# Most of the following functions are based on the sefm_eval_and_json_editor.py main function
+def correct_IntendedFor(layout, subsess, args, df):
+    for subject, sessions in subsess:
+
+        # Check if there are any IntendedFor fields in the JSONs
+        fmaps = layout.get(subject=subject, session=sessions, datatype='fmap', extension='.nii.gz')
+
+        if fmaps:
+            for fmap in [os.path.join(x.dirname, x.filename) for x in fmaps]:
+                fmap_json = fmap.replace('.nii.gz', '.json')
+                fmap_metadata = layout.get_metadata(fmap)
+
+                if 'IntendedFor' in fmap_metadata:
+                    # load in the JSON file
+                    with open(fmap_json, 'r') as f:
+                        contents = json.load(f)
+
+                    original_value = contents['IntendedFor']
+
+                    # if it's an empty list
+                    if original_value == []:
+                        # remove the empty IntendedFor field
+                        del contents['IntendedFor']
+
+                        # write the JSON file back out
+                        with open(fmap_json, 'w') as f:
+                            json.dump(contents, f, indent=4)
+
+                    # else if it's a list with entries
+                    elif type(original_value) is list:
+                        corrected_value = []
+                        for entry in original_value:
+                            corrected_value.append(re.sub(r'^.*(sub-.+/)', 'bids::\g<1>', entry))
+
+                        insert_edit_json(fmap_json, 'IntendedFor', corrected_value)
+                    
+                    # otherwise it's a string and we need to correct just the one entry
+                    else:
+                        corrected_value = re.sub(r'^.*(sub-.+/)', 'bids::\g<1>', original_value)
+                        insert_edit_json(fmap_json, 'IntendedFor', corrected_value)
+
+    return BIDSLayout(args.bids), df
+
+
+# Most of the following functions are based on the DCAN-Labs/abcd-dicom2bids
+# sefm_eval_and_json_editor.py or correct_jsons.py main functions
 
 def separate_fmaps(layout, subsess, args, df):
     fsl_dir = fsl_check()
@@ -795,6 +840,7 @@ def main():
     if args.dwifmapIntendedFor or args.DCAN != None:
         info("Assigning dwi fmap IntendedFor field")
         layout, df = assign_dwifmapIntendedFor(layout, subsess, args, df)
+        layout, df = correct_IntendedFor(layout, subsess, args, df)
 
     # check if the acq-func fmap IntendedFor argument was provided
     # if so, also run the fmapSeparate option
@@ -804,6 +850,7 @@ def main():
 
         info("Assigning func fmap IntendedFor fields")
         layout, df = assign_funcfmapIntendedFor(layout, subsess, args, df)
+        layout, df = correct_IntendedFor(layout, subsess, args, df)
     # if not and the fmapSeparate option was passed without the funcfmapIntendedFor
     elif args.funcfmapIntendedFor == None and args.fmapSeparate:
         info("Separating concatenated field maps")

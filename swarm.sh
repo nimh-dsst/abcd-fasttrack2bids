@@ -2,11 +2,12 @@
 
 # initialize inputs
 ABCD_FASTQC01=/data/NIMH_scratch/zwallymi/earlea-d2b/fastqc/20240501_abcd_fastqc01.txt
-BIDS_OUTPUT_DIR=/data/NIMH_scratch/zwallymi/earlea-d2b/downloads/testing_chain
+BIDS_OUTPUT_DIR=/data/NIMH_scratch/zwallymi/earlea-d2b/downloads/small_sample
 MCR91_DIR=/data/NIMH_scratch/zwallymi/earlea-d2b/abcd-dicom2bids/env_setup/MCR_v9.1/v91
 NDA_PACKAGE_ID=1230191
-SESSIONS_CSV=/data/NIMH_scratch/zwallymi/earlea-d2b/downloads/sample_sessions.csv
+SESSIONS_CSV=/data/NIMH_scratch/zwallymi/earlea-d2b/downloads/small_sessions.csv
 LOG_BASEDIR=/data/NIMH_scratch/zwallymi/earlea-d2b/logs
+CORRECTION_OPTIONS="--dwiCorrectOldGE --funcSliceTimingRemove --dwibvalCorrectFloatingPointError --fmapTotalReadoutTime --funcTotalReadoutTime --fmapbvalbvecRemove --funcfmapIntendedFor ${MCR91_DIR}"
 
 # cleanup pre-run to allow all files to be downloaded, this also gest around a bug in downloadcmd
 echo "### Cleaning out the download progress file to allow all files to be downloaded ###"
@@ -34,7 +35,7 @@ echo "#SWARM --logdir ${LOG_DIR}" >> ${SWARM_FILE}
 # for each s3links file (each separated session) in the LOG_DIR, run the pipeline, bids_corrections, and rsync back
 for LINK in ${LOG_DIR}/*/*_s3links.txt ; do
     CMD1="poetry run --directory ${CODE_DIR} python ${CODE_DIR}/pipeline.py -p ${NDA_PACKAGE_ID} -c ${CODE_DIR}/dcm2bids_v3_config.json -z LOGS BIDS --n-download 2 --n-unpack 2 --n-convert 1 -o /lscratch/\${SLURM_JOB_ID} -s ${LINK}"
-    CMD2="poetry run --directory ${CODE_DIR} python ${CODE_DIR}/bids_corrections.py -b /lscratch/\${SLURM_JOB_ID}/rawdata -t /lscratch/\${SLURM_JOB_ID} --fmapbvalbvecRemove --DCAN ${MCR91_DIR}"
+    CMD2="poetry run --directory ${CODE_DIR} python ${CODE_DIR}/bids_corrections.py -b /lscratch/\${SLURM_JOB_ID}/rawdata -t /lscratch/\${SLURM_JOB_ID} ${CORRECTION_OPTIONS}"
     CMD3="for BIDS in code rawdata sourcedata ; do if [ -d /lscratch/\${SLURM_JOB_ID}/\${BIDS} ] ; then echo rsyncing from /lscratch/\${SLURM_JOB_ID}/\${BIDS} ; rsync -art /lscratch/\${SLURM_JOB_ID}/\${BIDS} ${BIDS_OUTPUT_DIR}/ ; fi ; done"
 
     echo "${CMD1} ; ${CMD2} ; ${CMD3} ; echo rsync completed to ${BIDS_OUTPUT_DIR}" >> ${SWARM_FILE}

@@ -2,6 +2,9 @@
 
 import argparse
 import logging
+import os
+import random
+import string
 
 from logging import debug, info, warning, error, critical
 from nipype import Workflow
@@ -130,6 +133,17 @@ def corrupt_volume_removal(func_run):
             os.remove(os.path.join(func_run, dicom_basename))
         
         # @TODO Record the removal of the corrupt volume to an obvious log file = github issue #8
+        # go to the parent folder of the DICOM folder and create a scans.tsv
+        root_relpath = '/'.join(func_run.split('/')[:-5])
+        scans_file = f'{root_relpath}/scans.tsv'
+
+        if not os.path.exists(scans_file):
+            with open(scans_file, 'w') as f:
+                f.write('filename\tcorrupt_volume\n')
+            print(f'Creating "scans.tsv": {scans_file}')
+
+        with open(scans_file, 'a') as f:
+            f.write(f'{func_run}\t1\n')
 
         return True
 
@@ -465,6 +479,17 @@ def main():
             name='mkdir_bids')
         mkdir_bids_results = mkdir_bids.run()
         debug(mkdir_bids_results)
+
+        # retrieve the scans.tsv file if it's there and uniquely identify it
+        scans_tsv = f'{cleanup_dir}/scans.tsv'
+        if os.path.exists(scans_tsv):
+            temp_string = ''.join(random.choices(string.ascii_uppercase + '123456789', k=8))
+            scans_tsv_unique = f'{cleanup_dir}/rawdata/scans_{temp_string}.tsv'
+            rsync_scans = Node(
+                CommandLine('rsync', args=f'-art {scans_tsv} {scans_tsv_unique}'),
+                name='rsync_scans')
+            rsync_scans_results = rsync_scans.run()
+            debug(rsync_scans_results)
 
         # move the BIDS files to the output directory
         rsync_bids = Node(

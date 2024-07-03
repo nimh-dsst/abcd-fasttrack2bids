@@ -2,12 +2,14 @@
 
 # initialize inputs
 ABCD_FASTQC01=/data/NIMH_scratch/zwallymi/earlea-d2b/fastqc/20240501_abcd_fastqc01.txt
-BIDS_OUTPUT_DIR=/data/NIMH_scratch/zwallymi/earlea-d2b/downloads/small_sample
+BIDS_OUTPUT_DIR=/data/NIMH_scratch/zwallymi/earlea-d2b/downloads/20_sw_versions
 MCR91_DIR=/data/NIMH_scratch/zwallymi/earlea-d2b/abcd-dicom2bids/env_setup/MCR_v9.1/v91
 NDA_PACKAGE_ID=1230191
-SESSIONS_CSV=/data/NIMH_scratch/zwallymi/earlea-d2b/downloads/small_sessions.csv
+SESSIONS_CSV=/data/NIMH_scratch/zwallymi/earlea-d2b/downloads/20_software_version_sessions.csv
 LOG_BASEDIR=/data/NIMH_scratch/zwallymi/earlea-d2b/logs
 CORRECTION_OPTIONS="--dwiCorrectOldGE --funcSliceTimingRemove --dwibvalCorrectFloatingPointError --fmapTotalReadoutTime --funcTotalReadoutTime --fmapbvalbvecRemove --funcfmapIntendedFor ${MCR91_DIR}"
+
+mkdir -p ${BIDS_OUTPUT_DIR}
 
 # cleanup pre-run to allow all files to be downloaded, this also gest around a bug in downloadcmd
 echo "### Cleaning out the download progress file to allow all files to be downloaded ###"

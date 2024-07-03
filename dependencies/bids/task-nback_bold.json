@@ -1,5 +1,5 @@
 {
-    "TaskName": "n-back",
+    "TaskName": "Emotional N-Back Task",
     "TaskDescription": "See https://en.wikipedia.org/wiki/N-back",
     "CogAtlasID": "http://www.cognitiveatlas.org/task/id/tsk_4a57abb949bcd/",
     "CogPOID": "http://wiki.cogpo.org/index.php?title=N-back_Paradigm"

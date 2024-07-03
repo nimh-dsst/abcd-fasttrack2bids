@@ -132,7 +132,6 @@ def corrupt_volume_removal(func_run):
             dicom_basename = dicom_one_basename.replace('000001', dicom_num)
             os.remove(os.path.join(func_run, dicom_basename))
         
-        # @TODO Record the removal of the corrupt volume to an obvious log file = github issue #8
         # go to the parent folder of the DICOM folder and create a scans.tsv
         root_relpath = '/'.join(func_run.split('/')[:-5])
         scans_file = f'{root_relpath}/scans.tsv'

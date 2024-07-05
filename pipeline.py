@@ -480,7 +480,7 @@ def main():
         debug(mkdir_bids_results)
 
         # retrieve the scans.tsv file if it's there and uniquely identify it
-        scans_tsv = f'{cleanup_dir}/scans.tsv'
+        scans_tsv = f'{output_dir}/scans.tsv'
         if os.path.exists(scans_tsv):
             temp_string = ''.join(random.choices(string.ascii_uppercase + '123456789', k=8))
             scans_tsv_unique = f'{cleanup_dir}/rawdata/scans_{temp_string}.tsv'

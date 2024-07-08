@@ -142,12 +142,13 @@ def corrupt_volume_removal(func_run):
     import pydicom
     from glob import glob
 
-    alt_name = rename_scan(func_run)
-
     if func_run == '':
         return False
 
     else:
+        # rename the scan to the BIDS format for scans.tsv
+        alt_name = rename_scan(func_run)
+
         # in dicom_one, grab the number of temporal positions (2001,1081) and check the number of slices per time point is 60
         dicom_one = glob(f'{func_run}/*_dicom000001.dcm')[0]
         dicom_one_meta = pydicom.dcmread(dicom_one)

@@ -107,9 +107,42 @@ def corrupt_volume_check(func_dcm):
 
 
 def corrupt_volume_removal(func_run):
+
+    def rename_scan(series):
+        import re
+        from pathlib import Path
+
+        scan = Path(series)
+        basename = scan.name
+        funcdir = scan.parent
+        if 'rsfMRI' in basename:
+            task = 'rest'
+        elif 'MID' in basename:
+            task = 'MID'
+        elif 'SST' in basename:
+            task = 'SST'
+        elif 'nBack' in basename:
+            task = 'nback'
+
+        glob_expression = re.sub(r'_run-\d+', '_run-*', str(basename))
+        scans = sorted([str(x) for x in funcdir.glob(glob_expression) if x.is_dir()])
+        for i, scandir in enumerate(scans):
+            run = i + 1
+            if scandir == str(scan):
+                break
+
+        subsesdir = str(funcdir.parent)
+        subject = subsesdir.split('/')[-2]
+        session = subsesdir.split('/')[-1]
+        newname = f'{subject}/{session}/func/{subject}_{session}_task-{task}_run-{run:02}_bold.nii.gz'
+
+        return newname
+
     import os
     import pydicom
     from glob import glob
+
+    alt_name = rename_scan(func_run)
 
     if func_run == '':
         return False
@@ -142,7 +175,7 @@ def corrupt_volume_removal(func_run):
             print(f'Creating "scans.tsv": {scans_file}')
 
         with open(scans_file, 'a') as f:
-            f.write(f'{func_run}\t1\n')
+            f.write(f'{alt_name}\t1\n')
 
         return True
 

@@ -55,11 +55,19 @@ You can control the number of concurrent downloads, unpackings, and conversions 
 
 The whole workflow regularly runs in less than 45 minutes for one MRI session, usually less than 30 minutes. But it's better to set a maximum time of 60 minutes for one MRI session, just in case. If you group many at once then expect the performance to vary from that.
 
-## Warning about "corrupt volume" removals
+## Warnings
+
+### About "corrupt volume" removals
 
 The first 3D volume (60 slices) in some 4D fMRI timeseries gets removed prior to Dcm2Bids/dcm2niix DICOM to NIfTI conversion when the presence of "Raw Data Storage" instead of "MR Image Storage" is in their first slice's Media Storage SOP Class DICOM field (0002,0002). These 4D volumes will have one less 3D volume than expected and these missing timepoints/frames/repetitions should be accounted for during analysis. Scans affected by this alteration are reported inside the `scans.tsv` file in the `rawdata/` output directory.
 
 If you would like more information, you can read the GitHub issue report originally made to dcm2niix @ [rordenlab/dcm2niix#830](https://github.com/rordenlab/dcm2niix/issues/830).
+
+### About `swarm.sh`
+
+When using the NIH HPC systems, you can use the `swarm.sh` script to run everything using biowulf's `swarm` command. This script is a simple wrapper that first launches the `fasttrack2s3.py` script to filter the S3 links, then launches the `pipeline.py` script to download, unpack, and convert, and finally launches the `bids_corrections.py` script to correct the BIDS dataset.
+
+Since it launches `fasttrack2s3.py` from the BASH script, you should use it in an `sinteractive` terminal session with a minimum of 8GB memory.
 
 ## Examples
 

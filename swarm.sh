@@ -2,7 +2,7 @@
 
 # initialize inputs
 BIDS_BASEDIR=/data/NIMH_scratch/zwallymi/earlea-d2b/downloads/current_dwi_20240708
-SESSIONS_CSV=/data/NIMH_scratch/zwallymi/earlea-d2b/downloads/current_dwi_20240708/unsuccessfully_converted_sessions_round_01.csv
+SESSIONS_CSV=/data/NIMH_scratch/zwallymi/earlea-d2b/downloads/current_dwi_20240708/unsuccessfully_converted_sessions_round_02.csv
 # CORRECTION_OPTIONS="--dwiCorrectOldGE --funcSliceTimingRemove --dwibvalCorrectFloatingPointError --fmapTotalReadoutTime --funcTotalReadoutTime --fmapbvalbvecRemove --funcfmapIntendedFor ${MCR91_DIR}"
 CORRECTION_OPTIONS="--dwiCorrectOldGE --dwibvalCorrectFloatingPointError"
 # DATATYPE_OPTIONS="all"
@@ -14,6 +14,10 @@ NDA_PACKAGE_ID=1230191
 ABCD_FASTQC01=/data/NIMH_scratch/zwallymi/earlea-d2b/fastqc/20240501_abcd_fastqc01.txt
 LOG_BASEDIR=/data/NIMH_scratch/zwallymi/earlea-d2b/logs
 MCR91_DIR=/data/NIMH_scratch/zwallymi/earlea-d2b/abcd-dicom2bids/env_setup/MCR_v9.1/v91
+
+#####################################
+### DO NOT MODIFY BELOW THIS LINE ###
+#####################################
 
 # cleanup pre-run to allow all files to be downloaded, this also gest around a bug in downloadcmd
 echo "### Cleaning out the download progress file to allow all files to be downloaded ###"
@@ -28,7 +32,6 @@ CODE_DIR=$(readlink -f `dirname $0`)
 TEMP_BASENAME=`date '+%Y-%m-%d'`_`head /dev/urandom | tr -dc A-Z1-9 | head -c8`
 LOG_DIR=${LOG_BASEDIR}/${TEMP_BASENAME}
 mkdir -p $LOG_DIR
-# poetry run --directory ${CODE_DIR} python ${CODE_DIR}/fasttrack2s3.py -sep -csv ${SESSIONS_CSV} ${ABCD_FASTQC01} ${LOG_DIR}
 poetry run --directory ${CODE_DIR} python ${CODE_DIR}/fasttrack2s3.py -d ${DATATYPE_OPTIONS} -sep -csv ${SESSIONS_CSV} ${ABCD_FASTQC01} ${LOG_DIR}
 
 # create the swarm file

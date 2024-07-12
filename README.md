@@ -67,7 +67,7 @@ If you would like more information, you can read the GitHub issue report origina
 
 When using the NIH HPC systems, you can use the `swarm.sh` script to run everything using biowulf's `swarm` command. This script is a simple wrapper that first launches the `fasttrack2s3.py` script to filter the S3 links, then launches the `pipeline.py` script to download, unpack, and convert, and finally launches the `bids_corrections.py` script to correct the BIDS dataset.
 
-Since it launches `fasttrack2s3.py` from the BASH script, you should use it in an `sinteractive` terminal session with a minimum of 8GB memory.
+Since `swarm.sh` launches `fasttrack2s3.py` from the BASH script, you should use `swarm.sh` in an `sinteractive` terminal session with a minimum of 8GB memory.
 
 ## Examples
 
@@ -75,10 +75,10 @@ Since it launches `fasttrack2s3.py` from the BASH script, you should use it in a
 
 Filter by default all series (except quality assurance series) from the `~/abcd_fastqc01.txt` file only including the participant-sessions in `~/sessions.csv`, then output the filtered `abcd_fastqc01.txt` files and S3 links to the `~/abcdfasttrack` output directory as both combined and separate files per participant-session (thanks to the `-sep` option).
 
-    ```bash
-    cd ~/abcd-fasttrack2bids
-    poetry run python fasttrack2s3.py -csv ~/sessions.csv -sep ~/abcd_fastqc01.txt ~/abcdfasttrack
-    ```
+```bash
+cd ~/abcd-fasttrack2bids
+poetry run python fasttrack2s3.py -csv ~/sessions.csv -sep ~/abcd_fastqc01.txt ~/abcdfasttrack
+```
 
 ### `pipeline.py`
 
@@ -100,10 +100,10 @@ Filter by default all series (except quality assurance series) from the `~/abcd_
 
 Correct the BIDS dataset using the "DCAN Labs corrections" at `~/all_p-20_s-25/rawdata` using the temporary directory of `/scratch/abcd`, logging to `~/all_p-20_s-25/code/logs`, and using the the MCR v9.1 (MATLAB R2016b compiler runtime environment) directory at `~/MCR/v91`.
 
-    ```bash
-    cd ~/abcd-fasttrack2bids
-    poetry run python bids_corrections.py -b ~/all_p-20_s-25/rawdata -t /scratch/abcd -l ~/all_p-20_s-25/code/logs --DCAN ~/MCR/v91
-    ```
+```bash
+cd ~/abcd-fasttrack2bids
+poetry run python bids_corrections.py -b ~/all_p-20_s-25/rawdata -t /scratch/abcd -l ~/all_p-20_s-25/code/logs --DCAN ~/MCR/v91
+```
 
 ## Acknowledgements
 

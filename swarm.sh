@@ -8,7 +8,7 @@
 BIDS_BASEDIR=/data/NIMH_scratch/zwallymi/earlea-d2b/downloads/current_dwi_20240708
 
 # The comma-separated value file containing the subject,session information expected in fasttrack2s3.py
-SESSIONS_CSV=/data/NIMH_scratch/zwallymi/earlea-d2b/downloads/current_dwi_20240708/unsuccessfully_converted_sessions_round_02.csv
+SESSIONS_CSV=/data/NIMH_scratch/zwallymi/earlea-d2b/downloads/current_dwi_20240708/unsuccessfully_converted_sessions_round_03.csv
 
 # This is the NDA package ID for the data to be downloaded with downloadcmd in pipeline.py
 NDA_PACKAGE_ID=1230191
@@ -43,7 +43,7 @@ MCR91_DIR=/data/NIMH_scratch/zwallymi/earlea-d2b/abcd-dicom2bids/env_setup/MCR_v
 #####################################
 
 # run the fasttrack2s3.py script
-echo "### Running the fasttrack2s3.py script ###"
+echo `date` "### Running the fasttrack2s3.py script ###"
 
 CODE_DIR=$(readlink -f `dirname $0`)
 TEMP_BASENAME=`date '+%Y-%m-%d'`_`head /dev/urandom | tr -dc A-Z1-9 | head -c8`
@@ -52,7 +52,7 @@ mkdir -p $LOG_DIR
 poetry run --directory ${CODE_DIR} python ${CODE_DIR}/fasttrack2s3.py -d ${DATATYPE_OPTIONS} -sep -csv ${SESSIONS_CSV} ${ABCD_FASTQC01} ${LOG_DIR}
 
 # create the swarm file
-echo "### Creating the swarm file ###"
+echo `date` "### Creating the swarm file ###"
 
 ABCD_FASTQC01_BASENAME=`basename ${ABCD_FASTQC01} | sed 's|\(.\+\)\..\+|\1|'`
 S3LINKS_COMPLETE_FILE=`ls -d ${LOG_DIR}/${ABCD_FASTQC01_BASENAME}_*_s3links.txt`
@@ -75,5 +75,5 @@ for LINK in ${LOG_DIR}/*/*_s3links.txt ; do
     echo "${CMD0} ; ${CMD1} ; ${CMD2} ; ${CMD3} ; echo rsync completed to ${BIDS_OUTPUT_DIR}" >> ${SWARM_FILE}
 done
 
-echo "### The following command is printed for your convenience, but not run yet ###"
+echo `date` "### The following command is printed for your convenience, but not run yet ###"
 echo "swarm --devel ${SWARM_FILE}"

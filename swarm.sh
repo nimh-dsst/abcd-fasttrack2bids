@@ -42,12 +42,6 @@ MCR91_DIR=/data/NIMH_scratch/zwallymi/earlea-d2b/abcd-dicom2bids/env_setup/MCR_v
 ### DO NOT MODIFY BELOW THIS LINE ###
 #####################################
 
-# cleanup pre-run to allow all files to be downloaded, this also gest around a bug in downloadcmd
-echo "### Cleaning out the download progress file to allow all files to be downloaded ###"
-DOWNLOAD_PROGRESS_DIR=~/NDA/nda-tools/downloadcmd/packages/${NDA_PACKAGE_ID}/.download-progress
-mkdir -p ${DOWNLOAD_PROGRESS_DIR}
-rm -rf ${DOWNLOAD_PROGRESS_DIR}/*
-
 # run the fasttrack2s3.py script
 echo "### Running the fasttrack2s3.py script ###"
 
@@ -73,11 +67,12 @@ echo "#SWARM --logdir ${LOG_DIR}" >> ${SWARM_FILE}
 
 # for each s3links file (each separated session) in the LOG_DIR, run the pipeline, bids_corrections, and rsync back
 for LINK in ${LOG_DIR}/*/*_s3links.txt ; do
+    CMD0="DOWNLOADCMD_PATH=/lscratch/\${SLURM_JOB_ID}/pip_install ; mkdir \${DOWNLOADCMD_PATH} ; poetry run --directory ${CODE_DIR} python -m pip install nda-tools -t \${DOWNLOADCMD_PATH} ; poetry run --directory ${CODE_DIR} python ${CODE_DIR}/fix_downloadcmd.py \${DOWNLOADCMD_PATH} ; cp \${DOWNLOADCMD_PATH}/bin/downloadcmd \${DOWNLOADCMD_PATH}/  ; export PATH=\${DOWNLOADCMD_PATH}:\${PATH}"
     CMD1="poetry run --directory ${CODE_DIR} python ${CODE_DIR}/pipeline.py ${PIPELINE_OPTIONS} -p ${NDA_PACKAGE_ID} -c ${CODE_DIR}/dcm2bids_v3_config.json -z LOGS BIDS --n-download 2 --n-unpack 2 --n-convert 1 -o /lscratch/\${SLURM_JOB_ID} -s ${LINK}"
     CMD2="poetry run --directory ${CODE_DIR} python ${CODE_DIR}/bids_corrections.py -b /lscratch/\${SLURM_JOB_ID}/rawdata -t /lscratch/\${SLURM_JOB_ID} ${CORRECTION_OPTIONS}"
     CMD3="for BIDS in code rawdata sourcedata ; do if [ -d /lscratch/\${SLURM_JOB_ID}/\${BIDS} ] ; then echo rsyncing from /lscratch/\${SLURM_JOB_ID}/\${BIDS} ; rsync -art /lscratch/\${SLURM_JOB_ID}/\${BIDS} ${BIDS_OUTPUT_DIR}/ ; echo cleaning out /lscratch/\${SLURM_JOB_ID}/\${BIDS} ; rm -rf /lscratch/\${SLURM_JOB_ID}/\${BIDS} ; fi ; done"
 
-    echo "${CMD1} ; ${CMD2} ; ${CMD3} ; echo rsync completed to ${BIDS_OUTPUT_DIR}" >> ${SWARM_FILE}
+    echo "${CMD0} ; ${CMD1} ; ${CMD2} ; ${CMD3} ; echo rsync completed to ${BIDS_OUTPUT_DIR}" >> ${SWARM_FILE}
 done
 
 echo "### The following command is printed for your convenience, but not run yet ###"

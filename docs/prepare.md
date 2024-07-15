@@ -33,7 +33,7 @@ You can check the status of this package by navigating back to the `Data Package
 
 ## 3. `downloadcmd` preparation
 
-The `Updating Stored Passwords with keyring` step on the [nda-tools repository](https://github.com/NDAR/nda-tools) README.md is still necessary.
+To use 'downloadcmd' it is necessary to set up a keyring. See the `Updating Stored Passwords with keyring` step on the [nda-tools repository](https://github.com/NDAR/nda-tools) README.md for more information.
 
 The contents of `~/.config/python_keyring/keyringrc.cfg` should be:
 
@@ -51,6 +51,6 @@ import keyring
 keyring.get_password("nda-tools", "<username>")
 ```
 
-If the correct password is not returned, then running `keyring.set_password("nda-tools", "<username>", "<password>")` should fix the issue.
+If the correct password is not returned, then running `keyring.set_password("nda-tools", "<username>", "<password>")` should fix the issue. If you are encountering the following error upon running this command 'ModuleNotFoundError: No module named 'keyrings'', then it is likely that your versions of 'keyring' and 'keyring.alt' are out of date. Make sure that the 'keyring' and 'keyrings.alt' versions respectively are '23.13.1' and '3.1' or greater.
 
 **Important Note**: your NDA password and keyring password cannot differ. It's also important to be careful if you use exclamation marks or other special characters in the password that can trigger keyring issues/errors.

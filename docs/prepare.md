@@ -27,7 +27,8 @@ The instructions for this package are similar to those for the `abcd_fastqc01.tx
 1. Click on `Data from Labs` on the left
 1. Search for `abcd study`
 1. Click on the checkbox to the left of `ABCD Study`, making sure that the `COLLECTION ID` is `2573`
-1. Follow steps 6-12 from above. Step 9 may take a couple of hours for the `Filter Cart` to update.
+1. Follow steps 6-11 from above. Step 9 may take a couple of hours for the `Filter Cart` to update.
+1. For step 12, make sure you click the box that says `Include Associated Data Files` before creating the package
 
 You can check the status of this package by navigating back to the `Data Packages` tab within your profile. You should see your newly created package at the top of the table with a status of `Creating Package`. This data package is 300+TB in size and may take up to a day to be created. Wait until the status changes to `Ready to Download` before proceeding. Make note of this Package ID as it will be needed to convert.
 

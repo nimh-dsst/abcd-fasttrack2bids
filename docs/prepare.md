@@ -60,7 +60,7 @@ cd ~/abcd-fasttrack2bids
 poetry run python -c 'keyring.set_password("nda-tools", "<username>", "<password>")'
 ```
 
-If you are encountering the following error upon running this command, then it is likely that your versions of 'keyring' and 'keyring.alt' are out of date. Make sure you have installed python poetry from the README.md installation instructions and that the 'keyring' and 'keyrings.alt' versions respectively are '23.13.1' and '3.1' or greater.
+If you are encountering the following error upon running this command, then it is likely that your versions of `keyring` and `keyring.alt` are out of date. Make sure you have installed python poetry from the README.md installation instructions and that the `keyring` and `keyrings.alt` versions respectively are `23.13.1` and `3.1` or greater.
 
 `ModuleNotFoundError: No module named 'keyrings'`
 

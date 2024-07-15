@@ -43,14 +43,21 @@ The contents of `~/.config/python_keyring/keyringrc.cfg` should be:
  keyring-path=/tmp/work
 ```
 
-After the contents of `keyringrc.cfg` have been properly edited, run these commands to see if your password for nda-tools is up to date. Be aware that this will display your password in the terminal:
+After the contents of `keyringrc.cfg` have been properly edited, run these commands (replacing `<username>` with your actual NDA username) to see if your password for nda-tools is up to date. Be aware that this will display your password in the terminal:
 
 ```shell
-python3
-import keyring
-keyring.get_password("nda-tools", "<username>")
+cd
+git clone https://github.com/nimh-dsst/abcd-fasttrack2bids.git
+cd ~/abcd-fasttrack2bids
+poetry install
+poetry run python -c 'import keyring ; keyring.get_password("nda-tools", "<username>")'
 ```
 
-If the correct password is not returned, then running `keyring.set_password("nda-tools", "<username>", "<password>")` should fix the issue.
+If the correct password is not returned, then run the following to fix the NDA credentials issue (replacing `<username>` with your actual NDA username and `<password>` with your actual NDA password):
+
+```shell
+cd ~/abcd-fasttrack2bids
+poetry run python -c 'keyring.set_password("nda-tools", "<username>", "<password>")'
+```
 
 **Important Note**: your NDA password and keyring password cannot differ. It's also important to be careful if you use exclamation marks or other special characters in the password that can trigger keyring issues/errors.

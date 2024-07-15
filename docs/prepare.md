@@ -50,7 +50,7 @@ cd
 git clone https://github.com/nimh-dsst/abcd-fasttrack2bids.git
 cd ~/abcd-fasttrack2bids
 poetry install
-poetry run python -c 'import keyring ; keyring.get_password("nda-tools", "<username>")'
+poetry run python -c 'import keyring ; print(keyring.get_password("nda-tools", "<username>"))'
 ```
 
 If the correct password is not returned, then run the following to fix the NDA credentials issue (replacing `<username>` with your actual NDA username and `<password>` with your actual NDA password):

@@ -5,25 +5,13 @@
 ######################################################
 
 # The base directory where the BIDS data will be stored
-BIDS_BASEDIR=/data/NIMH_scratch/zwallymi/earlea-d2b/downloads/current_dwi_20240708
+BIDS_BASEDIR=/data/NIMH_scratch/zwallymi/earlea-d2b/downloads/20_software_version_20240715
 
 # The comma-separated value file containing the subject,session information expected in fasttrack2s3.py
-SESSIONS_CSV=/data/NIMH_scratch/zwallymi/earlea-d2b/downloads/current_dwi_20240708/unsuccessfully_converted_sessions_round_03.csv
+SESSIONS_CSV=/data/NIMH_scratch/zwallymi/earlea-d2b/downloads/sample_sessions.csv
 
 # This is the NDA package ID for the data to be downloaded with downloadcmd in pipeline.py
 NDA_PACKAGE_ID=1230191
-
-# These are the space-separated options for the fasttrack2s3.py desired data types
-DATATYPE_OPTIONS="only-dwi"
-# DATATYPE_OPTIONS="all"
-
-# This will typically be empty for subjects with fMRI data present, the -d flag is for when there's no func data
-PIPELINE_OPTIONS="-d"
-# PIPELINE_OPTIONS=""
-
-# These are the space-separated options for the bids_corrections.py script to choose corrections to apply
-CORRECTION_OPTIONS="--dwiCorrectOldGE --dwibvalCorrectFloatingPointError"
-# CORRECTION_OPTIONS="--dwiCorrectOldGE --funcSliceTimingRemove --dwibvalCorrectFloatingPointError --fmapTotalReadoutTime --funcTotalReadoutTime --fmapbvalbvecRemove --funcfmapIntendedFor ${MCR91_DIR}"
 
 # The path to the abcd_fastqc01.txt file downloaded as-is from the NDA
 ABCD_FASTQC01=/data/NIMH_scratch/zwallymi/earlea-d2b/fastqc/20240501_abcd_fastqc01.txt
@@ -33,6 +21,15 @@ LOG_BASEDIR=/data/NIMH_scratch/zwallymi/earlea-d2b/logs
 
 # The MATLAB Compiler Runtime Environment (MCR) directory for the installed MCR version 9.1 (MATLAB R2016b)
 MCR91_DIR=/data/NIMH_scratch/zwallymi/earlea-d2b/abcd-dicom2bids/env_setup/MCR_v9.1/v91
+
+# These are the space-separated options for the fasttrack2s3.py desired data types
+DATATYPE_OPTIONS="all"
+
+# This will typically be empty for subjects with fMRI data present, the -d flag is for when there's no func data
+PIPELINE_OPTIONS=""
+
+# These are the space-separated options for the bids_corrections.py script to choose corrections to apply
+CORRECTION_OPTIONS="--dwiCorrectOldGE --funcSliceTimingRemove --dwibvalCorrectFloatingPointError --fmapTotalReadoutTime --funcTotalReadoutTime --fmapbvalbvecRemove --funcfmapIntendedFor ${MCR91_DIR}"
 
 ####################################################
 ### ^^^ This is the end of the input section ^^^ ###

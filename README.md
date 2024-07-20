@@ -65,7 +65,7 @@ If you would like more information, you can read the GitHub issue report origina
 
 ### About `swarm.sh`
 
-When using the NIH HPC systems, you can use the `swarm.sh` script to run everything using biowulf's `swarm` command. This script is a simple wrapper that first launches the `fasttrack2s3.py` script to filter the S3 links, then launches the `pipeline.py` script to download, unpack, and convert, and finally launches the `bids_corrections.py` script to correct the BIDS dataset.
+When using the NIH HPC systems, you can use the `swarm.sh` script to run everything using biowulf's `swarm` command. This script is a simple wrapper that first launches the `fasttrack2s3.py` script to filter the S3 links, then writes a swarm file able to run the `pipeline.py` script (to download, unpack, and convert) and `bids_corrections.py` script (to correct the BIDS dataset). It ends by printing out a `swarm` command that would run the swarm file with the `--devel` option enabled (which only prints what it would do and actually does nothing). It is good practice to batch the swarm job with the `-b` option before removing the `--devel` option from the `swarm` command.
 
 Since `swarm.sh` launches `fasttrack2s3.py` from the BASH script, you should use `swarm.sh` in an `sinteractive` terminal session with a minimum of 8GB memory.
 

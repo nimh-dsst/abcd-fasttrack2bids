@@ -3,17 +3,10 @@
 ## Installation
 
 1. Install [Python 3.8](https://www.python.org/downloads/) (or above).
-1. Install [pipx](https://pipxproject.github.io/pipx/).
-
-    ```shell
-    python3 -m pip install --user pipx
-    python3 -m pipx ensurepath
-    ```
-
 1. Install [Poetry](https://python-poetry.org/docs/).
 
     ```shell
-    pipx install --user poetry
+    python3 -m pip install --user poetry
     ```
 
 1. Clone this repository.

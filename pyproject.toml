@@ -5,6 +5,7 @@ description = "A tool for converting ABCD Study data from the NDA's fast track c
 authors = ["Eric Earl <eric.earl@nih.gov>", "Dustin Moraczewski <dustin.moraczewski@nih.gov>"]
 license = "CC0-1.0"
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.8"

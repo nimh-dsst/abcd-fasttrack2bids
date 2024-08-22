@@ -324,7 +324,7 @@ def main():
         debug(download_results)
 
     # decide whether or not to continue with the unpacking
-    if args.preserve == ['TGZ']:
+    if 'DICOM' not in args.preserve and 'BIDS' not in args.preserve:
         warning('DICOM and BIDS intermediary files are not to be preserved and will not be produced.')
         return
     else:

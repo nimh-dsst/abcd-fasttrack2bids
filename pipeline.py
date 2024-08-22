@@ -326,7 +326,6 @@ def main():
     # decide whether or not to continue with the unpacking
     if 'DICOM' not in args.preserve and 'BIDS' not in args.preserve:
         warning('DICOM and BIDS intermediary files are not to be preserved and will not be produced.')
-        return
     else:
 
         # make the DICOM directory
@@ -384,7 +383,6 @@ def main():
     # decide whether or not to continue with the conversion
     if 'BIDS' not in args.preserve:
         warning('BIDS files are not to be preserved and so will not be produced.')
-        return
     else:
 
         ### Create the DICOM to BIDS conversion workflow ###

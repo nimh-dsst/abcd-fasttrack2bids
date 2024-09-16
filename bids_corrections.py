@@ -69,6 +69,11 @@ def cli():
                             'This argument also triggers the --fmapSeparate option. '
                             'WARNING: Requires FSL and MATLAB Runtime Environment 9.1 as dependencies.')
 
+    parser.add_argument('--fmapCorrectIntendedFor', action='store_true', required=False,
+                        help='Correct any present IntendedFor fields in field map '
+                            'JSON sidecar metadata files by inserting the BIDS URI '
+                            'where it is not present or removing empty IntendedFor lists.')
+
     parser.add_argument('--anatDwellTime', action='store_true', required=False,
                         help='Inject the DwellTime field into the '
                             'anat JSON sidecar metadata files, '
@@ -251,7 +256,7 @@ def correct_IntendedFor(layout, subsess, args, df):
                             corrected_value.append(re.sub(r'^.*(sub-.+/)', 'bids::\g<1>', entry))
 
                         insert_edit_json(fmap_json, 'IntendedFor', corrected_value)
-                    
+
                     # otherwise it's a string and we need to correct just the one entry
                     else:
                         corrected_value = re.sub(r'^.*(sub-.+/)', 'bids::\g<1>', original_value)
@@ -855,6 +860,11 @@ def main():
     elif args.funcfmapIntendedFor == None and args.fmapSeparate:
         info("Separating concatenated field maps")
         layout, df = separate_fmaps(layout, subsess, args, df)
+
+    # check if the fmap IntendedFor correction argument was provided
+    if args.fmapCorrectIntendedFor:
+        info("Correcting fmap IntendedFor fields")
+        layout, df = correct_IntendedFor(layout, subsess, args, df)
 
     # check if the anat DwellTime argument was provided
     if args.anatDwellTime or args.DCAN != None:

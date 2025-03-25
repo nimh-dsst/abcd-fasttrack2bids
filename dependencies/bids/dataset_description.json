@@ -1,6 +1,6 @@
 {
     "Name": "NIMH Data Science & Sharing Team ABCD fast track BIDS",
-    "BIDSVersion": "1.9.0",
+    "BIDSVersion": "1.10.0",
     "Authors": [
         "Eric Earl",
         "Dustin Moraczewski"

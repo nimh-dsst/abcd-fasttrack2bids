@@ -41,7 +41,7 @@ def cli():
     parser.add_argument('-b', '--bids', type=writable, required=True,
                         help='Path to the BIDS input directory')
     parser.add_argument('-t', '--temporary', type=writable, required=True,
-                        help='Path to the temporary directory for intermediary files')
+                        help='Path to the temporary directory for intermediary IntendedFor assignment files')
 
     # optional arguments
     parser.add_argument('-l', '--log-level', metavar='LEVEL',
@@ -60,7 +60,7 @@ def cli():
 
     parser.add_argument('--dwifmapIntendedFor', action='store_true', required=False,
                         help='Assign IntendedFor fields to diffusion fmaps using the '
-                            'DCAN-Labs/abcd-dicom2bids eta^2 technique.')
+                            'DCAN-Labs/abcd-dicom2bids technique.')
 
     parser.add_argument('--funcfmapIntendedFor', nargs=1, default=None, required=False,
                         metavar='MRE_DIR',

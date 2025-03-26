@@ -148,3 +148,142 @@ def compare_nifti_files(a, b):
             affine = 'EQUAL AFFINE'
 
         return f'{shape}, {values}, {header}, {affine}'
+
+
+def evaluate_3d_subvolumes(nifti):
+    """
+    A function to split a 3D nifti into subvolumes and analyze each.
+    uses nibabel and numpy to perform small statistics on the 3D nifti
+
+    Parameters:
+    nifti (string): Path to a 3D NIfTI file
+
+    Returns:
+    volumes (dict): A dictionary containing the subvolume images and masks
+    statistics (dict): A dictionary containing statistics about each subvolume
+
+    """
+
+    import nibabel
+    import numpy
+    from nilearn.masking import compute_epi_mask
+
+    # Load the nifti file
+    img = nibabel.load(nifti)
+
+    # check if the image holds more than 1 timepoint
+    if len(img.shape) > 3 and img.shape[3] > 1:
+        print("The input NIfTI file must be 3D, not 4D")
+        # return None, None, None, None
+        return None
+
+    header = img.header
+    data = img.get_fdata()
+    affine = img.affine
+
+    # calculate a whole brain masked volume
+    mask_img = compute_epi_mask(img, opening=True)
+    mask = mask_img.get_fdata()
+    masked_data = numpy.multiply(data, mask)
+
+    # get the center of the volume
+    x_center, y_center, z_center, _ = numpy.linalg.pinv(affine).dot(
+        numpy.array([0, 0, 0, 1])
+    ).astype(int)
+
+    # R = [i for i in range(x_center, data.shape[0])]
+    # A = [i for i in range(y_center, data.shape[1])]
+    # S = [i for i in range(z_center, data.shape[2])]
+    # L = [i for i in range(0, x_center)]
+    # P = [i for i in range(0, y_center)]
+    # I = [i for i in range(0, z_center)]
+
+    R = numpy.s_[x_center:]
+    A = numpy.s_[y_center:]
+    S = numpy.s_[z_center:]
+    L = numpy.s_[:x_center]
+    P = numpy.s_[:y_center]
+    I = numpy.s_[:z_center]
+
+    print(data.shape)
+    print(R)
+    print(A)
+    print(S)
+
+    # create the 8 octant volumes: RAS, RAI, RPS, RPI, LAS, LAI, LPS, and LPI
+    # and the anterior and posterior halves
+    volumes = {
+        'Original': {
+            'image': data,
+            'mask': mask,
+            'masked_image': masked_data,
+        },
+        'RAS': {
+            'image': data[R, A, S],
+            'mask':  mask[R, A, S],
+            'masked_image': masked_data[R, A, S],
+        },
+        'RAI': {
+            'image': data[R, A, I],
+            'mask':  mask[R, A, I],
+            'masked_image': masked_data[R, A, I],
+        },
+        'RPS': {
+            'image': data[R, P, S],
+            'mask':  mask[R, P, S],
+            'masked_image': masked_data[R, P, S],
+        },
+        'RPI': {
+            'image': data[R, P, I],
+            'mask':  mask[R, P, I],
+            'masked_image': masked_data[R, P, I],
+        },
+        'LAS': {
+            'image': data[L, A, S],
+            'mask':  mask[L, A, S],
+            'masked_image': masked_data[L, A, S],
+        },
+        'LAI': {
+            'image': data[L, A, I],
+            'mask':  mask[L, A, I],
+            'masked_image': masked_data[L, A, I],
+        },
+        'LPS': {
+            'image': data[L, P, S],
+            'mask':  mask[L, P, S],
+            'masked_image': masked_data[L, P, S],
+        },
+        'LPI': {
+            'image': data[L, P, I],
+            'mask':  mask[L, P, I],
+            'masked_image': masked_data[L, P, I],
+        },
+        'Anterior': {
+            'image': data[:, A, :],
+            'mask':  mask[:, A, :],
+            'masked_image': masked_data[:, A, :],
+        },
+        'Posterior': {
+            'image': data[:, P, :],
+            'mask':  mask[:, P, :],
+            'masked_image': masked_data[:, P, :],
+        },
+    }
+
+    # create a dictionary to store the statistics
+    statistics = {}
+    for key in volumes.keys():
+        statistics[key] = {
+            'shape': volumes[key]['image'].shape,
+            'mask_sum': numpy.sum(volumes[key]['mask']),
+            'image_mean': numpy.mean(volumes[key]['image']),
+            'image_std': numpy.std(volumes[key]['image']),
+            'image_min': numpy.min(volumes[key]['image']),
+            'image_max': numpy.max(volumes[key]['image']),
+            'masked_image_mean': numpy.mean(volumes[key]['masked_image']),
+            'masked_image_std': numpy.std(volumes[key]['masked_image']),
+            'masked_image_max': numpy.max(volumes[key]['masked_image']),
+        }
+
+    # return header, affine, volumes, statistics
+    return statistics

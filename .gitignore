@@ -1,6 +1,7 @@
 *.txt
 *.csv
 .vscode/
+experiments.ipynb
 utilities/
 doit/
 __pycache__/

@@ -205,11 +205,6 @@ def evaluate_3d_subvolumes(nifti):
     P = numpy.s_[:y_center]
     I = numpy.s_[:z_center]
 
-    print(data.shape)
-    print(R)
-    print(A)
-    print(S)
-
     # create the 8 octant volumes: RAS, RAI, RPS, RPI, LAS, LAI, LPS, and LPI
     # and the anterior and posterior halves
     volumes = {

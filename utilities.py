@@ -177,9 +177,9 @@ def evaluate_3d_subvolumes(nifti):
         # return None, None, None, None
         return None
 
-    header = img.header
+    # header = img.header
+    # affine = img.affine
     data = img.get_fdata()
-    affine = img.affine
 
     # calculate a whole brain masked volume
     mask_img = compute_epi_mask(img, opening=True)
@@ -187,9 +187,13 @@ def evaluate_3d_subvolumes(nifti):
     masked_data = numpy.multiply(data, mask)
 
     # get the center of the volume
-    x_center, y_center, z_center, _ = numpy.linalg.pinv(affine).dot(
-        numpy.array([0, 0, 0, 1])
-    ).astype(int)
+    # x_center, y_center, z_center, _ = numpy.linalg.pinv(affine).dot(
+    #     numpy.array([0, 0, 0, 1])
+    # ).astype(int)
+
+    x_center = int(round(data.shape[0] / 2))
+    y_center = int(round(data.shape[1] / 2))
+    z_center = int(round(data.shape[2] / 2))
 
     # R = [i for i in range(x_center, data.shape[0])]
     # A = [i for i in range(y_center, data.shape[1])]

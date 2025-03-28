@@ -267,6 +267,16 @@ def evaluate_3d_subvolumes(nifti):
             'mask':  mask[:, P, :],
             'masked_image': masked_data[:, P, :],
         },
+        'Anterior-Inferior': {
+            'image': data[:, A, I],
+            'mask':  mask[:, A, I],
+            'masked_image': masked_data[:, A, I],
+        },
+        'Posterior-Inferior': {
+            'image': data[:, P, I],
+            'mask':  mask[:, P, I],
+            'masked_image': masked_data[:, P, I],
+        },
     }
 
     # create a dictionary to store the statistics
